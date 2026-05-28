@@ -1,0 +1,745 @@
+/* ===== Reset & Base Settings ===== */
+/* 
+ * Resets default browser margins/paddings and sets a dark, anti-aliased base font theme.
+ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 
+ * Styles the global document root to use a modern, clean font and deep dark background.
+ * Prevents horizontal scrolling during floating animations.
+ */
+html, body {
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #05070f;
+    color: #f1f5f9;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Animated Backdrop Blobs ===== */
+/* 
+ * Positioned container covering the entire viewport under all interactive UI elements.
+ * Keeps floating graphics locked in the background.
+ */
+.bg-blobs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* 
+ * Base style for floating backdrop shapes.
+ * Applies strong blur filter, low opacity, and reference float animation.
+ */
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.15;
+    animation: blobFloat 30s infinite alternate ease-in-out;
+}
+
+/* 
+ * Top-left blue floating blur circle.
+ */
+.blob-1 {
+    width: 600px;
+    height: 600px;
+    background: #2563eb;
+    top: -150px;
+    left: -100px;
+}
+
+/* 
+ * Bottom-right purple floating blur circle.
+ * Employs a negative start delay to offset phase.
+ */
+.blob-2 {
+    width: 500px;
+    height: 500px;
+    background: #7c3aed;
+    bottom: -120px;
+    right: -80px;
+    animation-delay: -10s;
+}
+
+/* 
+ * Center-right cyan floating blur circle.
+ * Offset animation timing to create erratic overlapping motion.
+ */
+.blob-3 {
+    width: 350px;
+    height: 350px;
+    background: #0891b2;
+    top: 40%;
+    left: 60%;
+    animation-delay: -20s;
+}
+
+/* 
+ * Keyframe animations that scale and rotate the background blobs slowly.
+ * Creates a dynamic, living fluid effect.
+ */
+@keyframes blobFloat {
+    0% {
+        transform: scale(1) rotate(0deg);
+    }
+    100% {
+        transform: scale(1.2) rotate(20deg);
+    }
+}
+
+/* ===== Main Window Container ===== */
+/* 
+ * Aligns content centrally with high z-index to overlay background blobs.
+ * Leaves top padding to prevent titlebar overlap.
+ */
+.container {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 32px 24px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== Custom Titlebar ===== */
+/* 
+ * Header bar for frameless windows.
+ * Locks to the top of the viewport and serves as a custom drag region.
+ */
+.titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 32px;
+    background: #020308;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    user-select: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+/* 
+ * Drag handle covering most of the titlebar.
+ * Allows dragging the window on screen while leaving controls clickable.
+ */
+.titlebar-drag-region {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(100% - 135px);
+    height: 100%;
+    z-index: -1;
+    -webkit-app-region: drag;
+}
+
+/* 
+ * Container for the titlebar logo and title string.
+ */
+.titlebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 12px;
+    pointer-events: none;
+}
+
+/* 
+ * Icon vector coloring for the brand logo inside the titlebar.
+ */
+.titlebar-icon {
+    fill: #3b82f6;
+}
+
+/* 
+ * Typography style for the application brand string in the custom titlebar.
+ */
+.titlebar-text {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #94a3b8;
+    letter-spacing: 0.02em;
+}
+
+/* 
+ * Horizontal group containing window actions.
+ * Explicitly disabled dragging region so buttons trigger click events correctly.
+ */
+.titlebar-controls {
+    display: flex;
+    height: 100%;
+    z-index: 1001;
+    -webkit-app-region: no-drag;
+}
+
+/* 
+ * Style for frameless header buttons.
+ * Resets native appearance and adds highlight transitions.
+ */
+.titlebar-btn {
+    width: 45px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+/* 
+ * Hover state highlighting for regular titlebar control buttons.
+ * No translate transforms are applied here.
+ */
+.titlebar-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+}
+
+/* 
+ * Close button hover style.
+ * Uses standard crimson background to indicate termination action.
+ */
+.btn-close:hover {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+/* ===== Header Section ===== */
+/* 
+ * Layout block centering the main title and subheading description.
+ */
+.header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+/* 
+ * Main heading style featuring a premium text-clipping gradient effect.
+ */
+.header h1 {
+    font-size: 30px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+}
+
+/* 
+ * Subtitle styling with subtle gray color mapping.
+ */
+.header p {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 400;
+    margin-top: 6px;
+}
+
+/* ===== Glassmorphism Card Container ===== */
+/* 
+ * Main form input container.
+ * Employs backdrop filter blur, borders, and shadows to look premium.
+ */
+.card {
+    background: rgba(10, 15, 30, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* ===== Form Structure ===== */
+/* 
+ * Arranges label and control inputs side-by-side inside form sections.
+ */
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+/* 
+ * Uppercase input tags specifying fields.
+ */
+.form-row label {
+    min-width: 110px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+}
+
+/* 
+ * Custom text input styling.
+ * Deep dark fill with transition borders.
+ */
+.form-row input[type="text"] {
+    flex: 1;
+    background: rgba(2, 4, 10, 0.7);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: #f8fafc;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* 
+ * Focus indicator for text fields.
+ * Adds a modern blue border glow.
+ */
+.form-row input[type="text"]:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+/* 
+ * Darker placeholder text styling for input boxes.
+ */
+.form-row input[type="text"]::placeholder {
+    color: #475569;
+}
+
+/* ===== Directory Selector Group ===== */
+/* 
+ * Row container containing path viewer and browse button.
+ */
+.dir-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+/* 
+ * Read-only text box for showing the selected download folder path.
+ */
+.dir-path {
+    flex: 1;
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: rgba(2, 4, 10, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+/* 
+ * Folder picker trigger button.
+ */
+.btn-browse {
+    background: #1e293b;
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+}
+
+/* 
+ * Highlighting browse button on hover.
+ * No translate transforms are applied here.
+ */
+.btn-browse:hover {
+    background: #334155;
+    color: #e2e8f0;
+}
+
+/* ===== Advanced settings switch ===== */
+/* 
+ * Interactive settings anchor styling.
+ */
+.advanced-toggle {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-bottom: 8px;
+    transition: color 0.2s;
+}
+
+/* 
+ * Settings toggle anchor hover feedback.
+ */
+.advanced-toggle:hover {
+    color: #60a5fa;
+}
+
+/* ===== Advanced Settings Grid Panel ===== */
+/* 
+ * Hidden block by default.
+ * Shifts grid layout dynamically when class is toggled.
+ */
+.advanced-panel {
+    display: none;
+    gap: 16px;
+    grid-template-columns: 1fr 1fr 1fr;
+    margin-bottom: 16px;
+    animation: panelFadeIn 0.3s ease;
+}
+
+/* 
+ * Grid class overlay triggered by javascript click events.
+ */
+.advanced-panel.visible {
+    display: grid;
+}
+
+/* 
+ * Simple fade in animation for panel grid transition.
+ */
+@keyframes panelFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* 
+ * Container wrapping labels and inputs inside advanced groups.
+ */
+.adv-group label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+/* 
+ * Selector boxes and input elements for configuration.
+ */
+.adv-group select, .adv-group input {
+    width: 100%;
+    background: rgba(2, 4, 10, 0.7);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 9px 10px;
+    color: #f1f5f9;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+/* 
+ * Focus state glow configuration for selector dropdowns and inputs.
+ */
+.adv-group select:focus, .adv-group input:focus {
+    border-color: #3b82f6;
+}
+
+/* 
+ * Select menu custom elements theme styling.
+ */
+.adv-group select option {
+    background: #0d1117;
+    color: #cbd5e1;
+}
+
+/* 
+ * Range start and end text containers.
+ */
+.range-inputs {
+    display: flex;
+    gap: 8px;
+}
+
+/* 
+ * Flex fill for range input children.
+ */
+.range-inputs input {
+    flex: 1;
+}
+
+/* ===== Action Buttons ===== */
+/* 
+ * Arranges action buttons in centered rows.
+ */
+.actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+/* 
+ * Main action download trigger button.
+ * Styling uses premium brand gradient and box shadows.
+ */
+.btn-download {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #db2777 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 32px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.25);
+    transition: box-shadow 0.2s, opacity 0.2s, transform 0.2s;
+}
+
+/* 
+ * Highlight animations on the download button.
+ * Uses a slight scale factor and shadow enhancement (no translate transforms).
+ */
+.btn-download:hover {
+    box-shadow: 0 6px 24px rgba(124, 58, 237, 0.4);
+    transform: scale(1.02);
+}
+
+/* 
+ * Disabled download state when downloading is active.
+ */
+.btn-download:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* 
+ * Stop/cancel button action styles.
+ * Translucent red button design.
+ */
+.btn-cancel {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1.5px solid rgba(239, 68, 68, 0.25);
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+/* 
+ * Hover highlight styling for cancel actions.
+ * Slight scale shift and color brightness (no translate transforms).
+ */
+.btn-cancel:hover {
+    background: rgba(239, 68, 68, 0.22);
+    border-color: #ef4444;
+    transform: scale(1.02);
+}
+
+/* 
+ * Disabled styling parameters for cancel button.
+ */
+.btn-cancel:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ===== Progress Display Section ===== */
+/* 
+ * Progress dashboard laying out status text, bar, and logs.
+ */
+.progress-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* 
+ * Header layout balancing status string and current track description.
+ */
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* 
+ * Bold status readout values.
+ */
+.status-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+/* 
+ * Current download target track names.
+ */
+.track-text {
+    font-size: 12px;
+    color: #64748b;
+    font-style: italic;
+    max-width: 50%;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ===== Progress Bar ===== */
+/* 
+ * Background slot track for progress indicator.
+ */
+.progress-bar-container {
+    width: 100%;
+    height: 10px;
+    background: rgba(2, 4, 10, 0.8);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* 
+ * Custom sliding progress percentage value.
+ * Gradient fill is cycled automatically.
+ */
+.progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
+    background-size: 300% 100%;
+    border-radius: 5px;
+    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: barShimmer 4s linear infinite;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.45);
+}
+
+/* 
+ * Cycles the gradient positions on active progress bars.
+ */
+@keyframes barShimmer {
+    0% {
+        background-position: 0% 0%;
+    }
+    100% {
+        background-position: 300% 0%;
+    }
+}
+
+/* ===== Console Log Terminal ===== */
+/* 
+ * Scrollable command log readout window.
+ */
+.console {
+    flex: 1;
+    background: rgba(3, 5, 12, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    padding: 12px 14px;
+    overflow-y: auto;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 11px;
+    line-height: 1.7;
+    color: #718096;
+    min-height: 140px;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* 
+ * Standard line tags inside output logs.
+ */
+.console .log-line {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.01);
+    padding: 2px 0;
+    word-break: break-all;
+}
+
+/* 
+ * Colored output log styles representing success completion messages.
+ */
+.console .log-success {
+    color: #10b981;
+    font-weight: 600;
+}
+
+/* 
+ * Colored output log styles representing system error indicators.
+ */
+.console .log-error {
+    color: #f87171;
+    font-weight: 600;
+}
+
+/* 
+ * Colored output log styles representing warn warnings.
+ */
+.console .log-warn {
+    color: #fbbf24;
+}
+
+/* ===== Customized scrollbar rules ===== */
+/* 
+ * Overlays native scrollbar rails with thin dark columns.
+ */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+/* 
+ * Transparent background track slots for scrollbars.
+ */
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* 
+ * Scroll handle colors and borders.
+ */
+::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 3px;
+}
+
+/* 
+ * Highlight scroll handle on mouse focus.
+ */
+::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+}

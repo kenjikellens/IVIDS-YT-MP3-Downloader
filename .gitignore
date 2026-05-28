@@ -1,0 +1,19 @@
+# Dependencies and node artifacts
+node_modules/
+
+# Production builds
+dist/
+build/
+
+# Local configuration
+.vscode/
+
+# Python caching
+__pycache__/
+*.pyc
+
+# Local executables downloaded by the script
+yt-dlp.exe
+ffmpeg.exe
+ffprobe.exe
+ffmpeg-release-essentials.zip

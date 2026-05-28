@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IVIDS YT MP3 Downloader</title>
+    <meta name="description" content="A premium desktop utility to download YouTube playlists and single videos to high-quality audio formats.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Renderer JavaScript script -->
+    <script src="renderer.js" defer></script>
+</head>
+<body>
+
+    <!-- Floating animated background blobs -->
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- Custom titlebar for frameless windows -->
+    <div class="titlebar" id="app-titlebar">
+        <div class="titlebar-drag-region"></div>
+        <div class="titlebar-logo">
+            <svg class="titlebar-icon" viewBox="0 0 24 24" width="14" height="14">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+            </svg>
+            <span class="titlebar-text">IVIDS YT MP3 Downloader</span>
+        </div>
+        <div class="titlebar-controls">
+            <button class="titlebar-btn btn-minimize" id="btn-minimize" aria-label="Minimize Window">
+                <svg viewBox="0 0 10 10" width="10" height="10">
+                    <rect y="4.5" width="10" height="1" fill="currentColor"/>
+                </svg>
+            </button>
+            <button class="titlebar-btn btn-maximize" id="btn-maximize" aria-label="Maximize Window">
+                <svg viewBox="0 0 10 10" width="10" height="10">
+                    <rect x="1.5" y="1.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.2"/>
+                </svg>
+            </button>
+            <button class="titlebar-btn btn-close" id="btn-close" aria-label="Close Window">
+                <svg viewBox="0 0 10 10" width="10" height="10">
+                    <polygon points="10,1 9,0 5,4 1,0 0,1 4,5 0,9 1,10 5,6 9,10 10,9 6,5" fill="currentColor"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <main class="container" id="main-container">
+        <!-- Main Application Header -->
+        <header class="header">
+            <h1>IVIDS YT MP3 Downloader</h1>
+            <p>Download entire playlists or single videos to high-quality audio files</p>
+        </header>
+
+        <!-- Configuration Card Panel -->
+        <section class="card" id="settings-card">
+            <!-- URL Form Input Row -->
+            <div class="form-row">
+                <label for="url-input">YouTube URL</label>
+                <input type="text" id="url-input" placeholder="Paste playlist or video link here..." autocomplete="off">
+            </div>
+
+            <!-- Output Save Folder Selection Row -->
+            <div class="form-row">
+                <label>Save to</label>
+                <div class="dir-row">
+                    <div class="dir-path" id="dir-path">Loading...</div>
+                    <button class="btn-browse" id="btn-browse" onclick="browseDirectory()">Browse</button>
+                </div>
+            </div>
+
+            <!-- Advanced Configuration Toggler -->
+            <button class="advanced-toggle" id="advanced-toggle" onclick="toggleAdvanced()">⚙ Advanced Settings</button>
+
+            <!-- Advanced Parameter Panel -->
+            <div class="advanced-panel" id="advanced-panel">
+                <div class="adv-group">
+                    <label for="format-select">Audio Format</label>
+                    <select id="format-select">
+                        <option value="mp3" selected>MP3</option>
+                        <option value="m4a">M4A</option>
+                        <option value="wav">WAV</option>
+                    </select>
+                </div>
+                <div class="adv-group">
+                    <label for="quality-select">Audio Quality</label>
+                    <select id="quality-select">
+                        <option value="320k">320 kbps</option>
+                        <option value="192k" selected>192 kbps</option>
+                        <option value="128k">128 kbps</option>
+                    </select>
+                </div>
+                <div class="adv-group">
+                    <label>Playlist Range</label>
+                    <div class="range-inputs">
+                        <input type="text" id="start-range" placeholder="From" aria-label="Playlist Start Range">
+                        <input type="text" id="end-range" placeholder="To" aria-label="Playlist End Range">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Submissions Action Rows -->
+            <div class="actions">
+                <button class="btn-download" id="btn-download" onclick="startDownload()">Start Download</button>
+                <button class="btn-cancel" id="btn-cancel" onclick="cancelDownload()" disabled>Cancel</button>
+            </div>
+        </section>
+
+        <!-- Progress and Output Logging Section -->
+        <section class="progress-section" id="progress-section">
+            <div class="progress-header">
+                <span class="status-text" id="status-text">Status: Idle</span>
+                <span class="track-text" id="track-text"></span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+            <div class="console" id="console" role="log"></div>
+        </section>
+    </main>
+
+</body>
+</html>

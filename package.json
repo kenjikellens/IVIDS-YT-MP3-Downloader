@@ -1,0 +1,43 @@
+{
+  "name": "youtube-mp3-playlist-downloader",
+  "version": "1.0.0",
+  "description": "Premium YouTube MP3 Playlist Downloader",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "keywords": [
+    "youtube",
+    "mp3",
+    "downloader"
+  ],
+  "author": "Kenji",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^42.3.0",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "com.ivids.ytmp3downloader",
+    "productName": "IVIDS YT MP3 Downloader",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "${productName}.${ext}"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/downloadManager.js",
+      "ui/**/*",
+      "package.json"
+    ]
+  }
+}
