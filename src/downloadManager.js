@@ -333,10 +333,15 @@ class DownloadManager {
                 '--extract-audio',
                 '--audio-format', this.format,
                 '--audio-quality', this.quality,
-                '--ffmpeg-location', ffmpegPath,
+                '--concurrent-fragments', '5',
+                '--no-playlist',
                 '-o', outputTemplate,
                 videoUrl
             ];
+
+            if (ffmpegPath !== 'ffmpeg') {
+                args.push('--ffmpeg-location', ffmpegPath);
+            }
 
             const proc = spawn(ytDlpPath, args);
             this.activeProcess = proc;

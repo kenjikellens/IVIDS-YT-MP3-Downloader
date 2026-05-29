@@ -258,8 +258,8 @@ class DownloadManager:
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
-                                text=True, encoding='utf-8', startupinfo=startupinfo)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, 
+                                text=True, encoding='utf-8', errors='replace', startupinfo=startupinfo)
         active_process = proc
         
         tracks = []
@@ -286,7 +286,7 @@ class DownloadManager:
         if not tracks:
             cmd_single = [yt_dlp_path, "--dump-json", "--playlist-items", "1", self.url]
             proc_single = subprocess.Popen(cmd_single, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                           text=True, encoding='utf-8', startupinfo=startupinfo)
+                                           text=True, encoding='utf-8', errors='replace', startupinfo=startupinfo)
             active_process = proc_single
             stdout, _ = proc_single.communicate()
             active_process = None
@@ -325,43 +325,48 @@ class DownloadManager:
             "--extract-audio",
             "--audio-format", self.audio_format,
             "--audio-quality", self.quality,
-            "--ffmpeg-location", ffmpeg_path,
+            "--concurrent-fragments", "5",
+            "--no-playlist",
             "-o", output_template,
             video_url
         ]
+        
+        if ffmpeg_path != "ffmpeg":
+            cmd.extend(["--ffmpeg-location", ffmpeg_path])
         
         startupinfo = None
         if sys.platform == 'win32':
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
-                                text=True, encoding='utf-8', startupinfo=startupinfo)
+        # Combine stdout and stderr to avoid classic buffer deadlock
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
+                                text=True, encoding='utf-8', errors='replace', startupinfo=startupinfo)
         active_process = proc
         
-        # Regex is not needed for simple percentage parsing in stdout lines
+        # Read lines from the combined stream
         for line in proc.stdout:
             line_str = line.strip()
+            if not line_str:
+                continue
+                
             if "[download]" in line_str and "%" in line_str:
                 try:
-                    # Find percentage value
                     parts = line_str.split()
                     for p in parts:
                         if "%" in p:
                             pct_val = float(p.replace("%", ""))
-                            # Compute overall status indicator progress
                             overall = ((track_idx * 100) + pct_val) / total_items
                             self.sse_callback("progress", int(overall))
                             break
                 except:
                     pass
-            if line_str.startswith("[download]") or line_str.startswith("[ffmpeg]"):
+                    
+            if (line_str.startswith("[download]") or 
+                line_str.startswith("[ffmpeg]") or 
+                line_str.lower().startswith("error") or 
+                line_str.lower().startswith("warning")):
                 self.sse_callback("log", line_str)
-                
-        for line in proc.stderr:
-            err_line = line.strip()
-            if err_line:
-                self.sse_callback("log", err_line)
                 
         proc.wait()
         active_process = None

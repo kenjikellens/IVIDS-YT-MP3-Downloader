@@ -54,6 +54,8 @@ function navigateTo(targetPageId) {
     } else if (targetPageId === 'page-downloads') {
         document.getElementById('nav-downloads').classList.add('active');
         renderDownloadHistory();
+    } else if (targetPageId === 'page-settings') {
+        document.getElementById('nav-settings').classList.add('active');
     }
     
     closeSidebar();
@@ -85,23 +87,25 @@ function closeSidebar() {
 
 /**
  * Applies the selected color theme classes to the application HTML node.
- * Stores the chosen theme preferences in the LocalStorage.
+ * Stores the chosen theme preferences in the LocalStorage and updates the custom switch UI.
  * 
  * @param {string} theme - Theme name option ('dark' or 'light')
  */
 function changeTheme(theme) {
-    var themeBtn = document.getElementById('theme-btn');
+    var themeSwitch = document.getElementById('theme-switch');
     if (theme === 'light') {
         document.documentElement.classList.add('light-theme');
-        if (themeBtn) {
-            themeBtn.textContent = '🌙';
-            themeBtn.title = 'Switch to Dark Mode';
+        if (themeSwitch) {
+            themeSwitch.classList.remove('dark');
+            themeSwitch.setAttribute('aria-checked', 'false');
+            themeSwitch.title = 'Switch to Dark Mode';
         }
     } else {
         document.documentElement.classList.remove('light-theme');
-        if (themeBtn) {
-            themeBtn.textContent = '☀️';
-            themeBtn.title = 'Switch to Light Mode';
+        if (themeSwitch) {
+            themeSwitch.classList.add('dark');
+            themeSwitch.setAttribute('aria-checked', 'true');
+            themeSwitch.title = 'Switch to Light Mode';
         }
     }
     try {
@@ -110,7 +114,8 @@ function changeTheme(theme) {
 }
 
 /**
- * Flips the color theme class mapping settings.
+ * Flips the color theme class mapping settings and updates local storage.
+ * Determines the next theme state and propagates it to the layout.
  */
 function toggleTheme() {
     var currentTheme = 'dark';
@@ -157,6 +162,38 @@ async function browseDirectory() {
         }
     } catch (err) {
         addLog('[Error] Failed to select directory: ' + err.message);
+    }
+}
+
+/**
+ * Prompts native OS directory browser dialog for default download location.
+ * Saves selected path to LocalStorage and updates both main and settings path displays.
+ */
+async function browseDefaultDirectory() {
+    try {
+        var isElectron = !!window.electronAPI;
+        var folderPath = null;
+
+        if (isElectron) {
+            folderPath = await window.electronAPI.selectDirectory();
+        } else {
+            var response = await fetch('/api/select-directory');
+            if (!response.ok) throw new Error('Network error selecting folder');
+            var data = await response.json();
+            folderPath = data.path;
+        }
+
+        if (folderPath) {
+            localStorage.setItem('default-dir', folderPath);
+            setOutputDir(folderPath);
+            var settingsDirEl = document.getElementById('settings-dir-path');
+            if (settingsDirEl) {
+                settingsDirEl.textContent = folderPath;
+            }
+            addLog('Default output folder set to: ' + folderPath);
+        }
+    } catch (err) {
+        addLog('[Error] Failed to select default directory: ' + err.message);
     }
 }
 
@@ -652,7 +689,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     var advancedToggle = document.getElementById('advanced-toggle');
     var btnDownload = document.getElementById('btn-download');
     var btnCancel = document.getElementById('btn-cancel');
-    var themeBtn = document.getElementById('theme-btn');
+    var themeSwitch = document.getElementById('theme-switch');
     var hamburgerBtn = document.getElementById('hamburger-btn');
     var sidebarOverlay = document.getElementById('sidebar-overlay');
     var btnLoadInfo = document.getElementById('btn-load-info');
@@ -660,6 +697,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Page navigation anchors
     var navHome = document.getElementById('nav-home');
     var navDownloads = document.getElementById('nav-downloads');
+    var navSettings = document.getElementById('nav-settings');
     var btnClearHistory = document.getElementById('btn-clear-history');
 
     // Checklist toggles
@@ -670,7 +708,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (advancedToggle) advancedToggle.addEventListener('click', toggleAdvanced);
     if (btnDownload) btnDownload.addEventListener('click', startDownload);
     if (btnCancel) btnCancel.addEventListener('click', cancelDownload);
-    if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+    if (themeSwitch) {
+        themeSwitch.addEventListener('click', toggleTheme);
+        themeSwitch.addEventListener('keydown', function(e) {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                toggleTheme();
+            }
+        });
+    }
     if (btnLoadInfo) btnLoadInfo.addEventListener('click', loadMetadata);
     if (btnClearHistory) btnClearHistory.addEventListener('click', clearDownloadHistory);
 
@@ -679,6 +725,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
     if (navHome) navHome.addEventListener('click', () => navigateTo('page-home'));
     if (navDownloads) navDownloads.addEventListener('click', () => navigateTo('page-downloads'));
+    if (navSettings) navSettings.addEventListener('click', () => navigateTo('page-settings'));
 
     // Checklist buttons selection triggers
     if (btnSelectAll) btnSelectAll.addEventListener('click', () => toggleSelectAll(true));
@@ -703,6 +750,27 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch (e) {}
     changeTheme(savedTheme);
 
+    // Hook up Settings Default Folder browse trigger
+    var btnSettingsBrowse = document.getElementById('btn-settings-browse');
+    if (btnSettingsBrowse) btnSettingsBrowse.addEventListener('click', browseDefaultDirectory);
+
+    // Load initial language preference
+    var langSelect = document.getElementById('settings-lang-select');
+    if (langSelect) {
+        var savedLang = 'en';
+        try {
+            savedLang = localStorage.getItem('app-lang') || 'en';
+        } catch (e) {}
+        langSelect.value = savedLang;
+
+        langSelect.addEventListener('change', function() {
+            try {
+                localStorage.setItem('app-lang', langSelect.value);
+                addLog('Language preference saved: ' + langSelect.value.toUpperCase());
+            } catch (e) {}
+        });
+    }
+
     var isElectron = !!window.electronAPI;
     if (isElectron) {
         // Register titlebar buttons handlers
@@ -721,11 +789,32 @@ window.addEventListener('DOMContentLoaded', async () => {
         window.electronAPI.onComplete((data) => onComplete(data.success, data.errorMsg));
 
         // Get default folder path
+        var savedDir = null;
         try {
-            var defaultDir = await window.electronAPI.getDefaultDir();
-            setOutputDir(defaultDir);
-        } catch (e) {
-            setOutputDir('C:\\Downloads');
+            savedDir = localStorage.getItem('default-dir');
+        } catch (e) {}
+
+        if (savedDir) {
+            setOutputDir(savedDir);
+            var settingsDirEl = document.getElementById('settings-dir-path');
+            if (settingsDirEl) {
+                settingsDirEl.textContent = savedDir;
+            }
+        } else {
+            try {
+                var defaultDir = await window.electronAPI.getDefaultDir();
+                setOutputDir(defaultDir);
+                var settingsDirEl = document.getElementById('settings-dir-path');
+                if (settingsDirEl) {
+                    settingsDirEl.textContent = defaultDir;
+                }
+            } catch (e) {
+                setOutputDir('C:\\Downloads');
+                var settingsDirEl = document.getElementById('settings-dir-path');
+                if (settingsDirEl) {
+                    settingsDirEl.textContent = 'C:\\Downloads';
+                }
+            }
         }
     } else {
         // Browser Mode fallback overrides
@@ -733,14 +822,37 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (titlebar) titlebar.style.display = 'none';
         document.documentElement.classList.add('browser-mode');
 
+        var savedDir = null;
         try {
-            var res = await fetch('/api/get-default-dir');
-            if (res.ok) {
-                var data = await res.json();
-                if (data.path) setOutputDir(data.path);
+            savedDir = localStorage.getItem('default-dir');
+        } catch (e) {}
+
+        if (savedDir) {
+            setOutputDir(savedDir);
+            var settingsDirEl = document.getElementById('settings-dir-path');
+            if (settingsDirEl) {
+                settingsDirEl.textContent = savedDir;
             }
-        } catch (e) {
-            setOutputDir('/Downloads');
+        } else {
+            try {
+                var res = await fetch('/api/get-default-dir');
+                if (res.ok) {
+                    var data = await res.json();
+                    if (data.path) {
+                        setOutputDir(data.path);
+                        var settingsDirEl = document.getElementById('settings-dir-path');
+                        if (settingsDirEl) {
+                            settingsDirEl.textContent = data.path;
+                        }
+                    }
+                }
+            } catch (e) {
+                setOutputDir('/Downloads');
+                var settingsDirEl = document.getElementById('settings-dir-path');
+                if (settingsDirEl) {
+                    settingsDirEl.textContent = '/Downloads';
+                }
+            }
         }
     }
 });

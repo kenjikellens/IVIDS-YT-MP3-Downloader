@@ -31,6 +31,11 @@
     /* Buttons */
     --bg-button-secondary: #27272a;       /* Secondary button background */
     --bg-button-secondary-hover: #3f3f46; /* Hover state secondary button */
+    --bg-download: #22c55e;               /* Green download button background */
+    --bg-download-hover: #16a34a;         /* Hover download button background */
+    --text-download: #09090b;             /* High contrast download text */
+    --text-link-blue: #60a5fa;            /* Link blue text color */
+    --text-link-blue-hover: #93c5fd;      /* Link blue hover text color */
     
     /* Dedicated Console theme */
     --bg-console: #09090b;         /* Jet black console background */
@@ -43,6 +48,9 @@
     --sidebar-width: 220px;
     --titlebar-height: 32px;
     --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    
+    /* Shadows */
+    --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.2); /* Card shadow dark */
 }
 
 /* Light theme overrides applied when class is added to html root */
@@ -78,6 +86,11 @@
     /* Buttons */
     --bg-button-secondary: #e4e4e7;       /* Secondary button background */
     --bg-button-secondary-hover: #d4d4d8; /* Hover state secondary button */
+    --bg-download: #16a34a;               /* Green download button background */
+    --bg-download-hover: #15803d;         /* Hover download button background */
+    --text-download: #ffffff;             /* High contrast download text */
+    --text-link-blue: #2563eb;            /* Link blue text color */
+    --text-link-blue-hover: #1d4ed8;      /* Link blue hover text color */
     
     /* Dedicated Console theme */
     --bg-console: #ffffff;         /* Clean white console background */
@@ -85,6 +98,9 @@
     --text-log-success: #166534;   /* High-contrast green */
     --text-log-warn: #b45309;      /* High-contrast amber/brown warning */
     --text-log-error: #991b1b;     /* High-contrast red error */
+    
+    /* Shadows */
+    --shadow-card: 0 4px 12px rgba(9, 9, 11, 0.04), 0 1px 3px rgba(9, 9, 11, 0.03); /* Card shadow light */
 }
 
 /* Base reset for all HTML elements to standardize spacing */
@@ -352,6 +368,7 @@ html, body {
     border: 1px solid var(--border-default);
     border-radius: 6px;
     padding: 16px;
+    box-shadow: var(--shadow-card);
 }
 
 /* Configuration panel placement inside dashboard grid */
@@ -473,8 +490,8 @@ html, body {
 
 /* Primary solid action button representing download triggers */
 .btn-download {
-    background-color: var(--accent-blue);
-    color: var(--bg-app);
+    background-color: var(--bg-download);
+    color: var(--text-download);
     border: 1px solid var(--border-default);
     border-radius: 4px;
     padding: 10px 22px;
@@ -487,7 +504,7 @@ html, body {
 
 /* Hover highlights for primary action buttons */
 .btn-download:hover {
-    background-color: var(--accent-blue-hover);
+    background-color: var(--bg-download-hover);
 }
 
 /* Disabled state for primary action buttons */
@@ -544,7 +561,7 @@ html, body {
 .advanced-toggle {
     background: none;
     border: none;
-    color: var(--text-secondary);
+    color: var(--text-link-blue);
     font-size: 12px;
     font-weight: 500;
     font-family: inherit;
@@ -560,7 +577,7 @@ html, body {
 
 /* Hover highlights for advanced configurations toggle buttons */
 .advanced-toggle:hover {
-    color: var(--text-primary);
+    color: var(--text-link-blue-hover);
     text-decoration: underline;
 }
 
@@ -1098,6 +1115,7 @@ html, body {
     /* Opens sidebar drawer overlay offsets */
     .sidebar.open {
         left: 0;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
     }
 
     /* Backdrop displays when sidebar is open */
@@ -1167,3 +1185,201 @@ html, body {
         height: 36px;
     }
 }
+
+/* Left alignment wrapper inside window titlebar */
+.titlebar-left {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+/* Spacer element pushing settings nav option to sidebar bottom */
+.sidebar-spacer {
+    flex: 1;
+}
+
+/* Wrapper for single video preview layout state */
+.preview-state-single {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* Wrapper for playlist checkboard preview layout state */
+.preview-state-playlist {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Icon vector formatting inside empty history state */
+.downloads-empty-icon {
+    fill: var(--text-muted);
+    opacity: 0.5;
+    margin-bottom: 12px;
+}
+
+/* Text label inside empty history placeholder */
+.downloads-empty-text {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* Custom margin formatting centering Settings panel wrapper container */
+#page-settings {
+    margin: 15vh 30%;
+}
+
+/* Header title text specific to the Settings page */
+#page-settings .page-header h1 {
+    font-size: 24px;
+}
+
+/* Styling panel containing application configuration cards layout spacing */
+.settings-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    min-width: 320px;
+    flex: 1;
+}
+
+/* Horizontal settings configuration panel element layout row spacing */
+.settings-row {
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+/* Text wrapper holding setting parameter labels and subtexts */
+.settings-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Labels describing settings pane option title text */
+.settings-info .settings-label {
+    font-size: 16px;
+    font-weight: 600;
+    min-width: auto;
+    color: var(--text-primary);
+}
+
+/* Description text explaining setting parameter details */
+.settings-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* Container for the theme switch and its side icons */
+.theme-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Side vector icons for the theme toggle */
+.theme-toggle-icon {
+    transition: color 0.2s ease;
+    user-select: none;
+    color: var(--text-muted);
+}
+
+/* Color highlight for the active sun icon in light theme */
+.light-theme .theme-toggle-container .sun-svg {
+    color: var(--text-primary);
+}
+
+/* Color highlight for the active moon icon in dark theme */
+:not(.light-theme) .theme-toggle-container .moon-svg {
+    color: var(--text-primary);
+}
+
+/* Sliding track for the theme switch */
+.theme-switch {
+    width: 52px;
+    height: 26px;
+    border-radius: 13px;
+    background-color: var(--text-primary);
+    border: 1px solid var(--text-primary);
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+    outline: none;
+}
+
+/* Sliding knob handle within the theme switch track */
+.theme-switch-handle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--bg-card);
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: left 0.2s ease;
+}
+
+/* Position adjustment for active dark mode theme state */
+.theme-switch.dark .theme-switch-handle {
+    left: 28px;
+}
+
+/* Focus styles for keyboard accessibility on the theme switch */
+.theme-switch:focus-visible {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+/* Layout wrapper for settings directory path and browse button */
+.settings-dir-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Text box displaying the saved default directory path */
+.settings-dir-path {
+    font-size: 12px;
+    color: var(--text-secondary);
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    padding: 8px 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 260px;
+    min-width: 180px;
+    text-align: left;
+}
+
+/* Wrapper container for the settings language dropdown selector */
+.settings-lang-select-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+/* Dropdown select element for choosing UI language preference */
+.settings-lang-select {
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+/* Focused border highlight for settings language selector */
+.settings-lang-select:focus {
+    border-color: var(--border-focus);
+}
+

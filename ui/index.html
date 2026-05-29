@@ -19,7 +19,7 @@
     <!-- Custom titlebar for frameless windows -->
     <div class="titlebar" id="app-titlebar">
         <div class="titlebar-drag-region"></div>
-        <div style="display:flex;align-items:center;height:100%;">
+        <div class="titlebar-left">
             <button class="hamburger" id="hamburger-btn" aria-label="Toggle Navigation Sidebar">☰</button>
             <div class="titlebar-logo">
                 <svg class="titlebar-icon" viewBox="0 0 24 24" width="14" height="14">
@@ -64,6 +64,11 @@
                 <svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10l-4-4h3V9h2v3h3l-4 4z"/></svg>
                 Downloaded Files
             </div>
+            <div class="sidebar-spacer"></div>
+            <div class="nav-item" id="nav-settings">
+                <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+                Settings
+            </div>
         </nav>
 
         <!-- Main Content Area -->
@@ -73,7 +78,6 @@
             <div class="page active" id="page-home">
                 <header class="page-header">
                     <h1>Download Audio</h1>
-                    <button id="theme-btn" class="btn-theme" title="Toggle Theme" aria-label="Toggle Application Theme">☀️</button>
                 </header>
 
                 <div class="app-layout">
@@ -93,7 +97,7 @@
 
                         <!-- Advanced Settings Disclosure Trigger -->
                         <button class="advanced-toggle" id="advanced-toggle">
-                            ⚙ Advanced Settings <span class="chevron" id="advanced-chevron">▼</span>
+                            ⚙ Advanced Settings
                         </button>
 
                         <!-- Advanced Settings panel grid -->
@@ -138,14 +142,14 @@
                         </div>
 
                         <!-- STATE: Single Video Preview -->
-                        <div id="state-single" style="display:none; flex-direction:column; flex:1;">
+                        <div id="state-single" class="preview-state-single">
                             <div class="video-card" id="single-video-card">
                                 <!-- Populated dynamically by script.js -->
                             </div>
                         </div>
 
                         <!-- STATE: Playlist Preview -->
-                        <div id="state-playlist" style="display:none; flex-direction:column; flex:1; min-height:0;">
+                        <div id="state-playlist" class="preview-state-playlist">
                             <!-- Select all / deselect toolbar -->
                             <div class="track-list-header">
                                 <span class="track-count" id="track-count-text">0 tracks found</span>
@@ -181,13 +185,65 @@
                     <button class="btn-secondary" id="btn-clear-history">Clear History</button>
                 </header>
                 <div class="downloads-empty" id="downloads-empty-state">
-                    <svg viewBox="0 0 24 24" width="48" height="48" style="fill:var(--text-muted); opacity:0.5; margin-bottom:12px;">
+                    <svg viewBox="0 0 24 24" width="48" height="48" class="downloads-empty-icon">
                         <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 10H6v-2h12v2zm0-3H6v-2h12v2z"/>
                     </svg>
-                    <p style="color:var(--text-muted); font-size:13px;">No downloaded tracks in history yet.</p>
+                    <p class="downloads-empty-text">No downloaded tracks in history yet.</p>
                 </div>
                 <div class="downloads-list" id="downloads-list-items">
                     <!-- Populated dynamically by script.js -->
+                </div>
+            </div>
+
+            <!-- ===== PAGE: SETTINGS ===== -->
+            <div class="page" id="page-settings">
+                <header class="page-header">
+                    <h1>Settings</h1>
+                </header>
+                <div class="card settings-card">
+                    <div class="form-row settings-row">
+                        <div class="settings-info">
+                            <label class="settings-label">Application Theme</label>
+                            <span class="settings-desc">Toggle between dark and light appearance modes.</span>
+                        </div>
+                        <div class="theme-toggle-container">
+                            <svg class="theme-toggle-icon sun-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                                <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+                                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <div class="theme-switch" id="theme-switch" role="checkbox" aria-checked="false" tabindex="0" title="Toggle Theme" aria-label="Toggle Application Theme">
+                                <div class="theme-switch-handle"></div>
+                            </div>
+                            <svg class="theme-toggle-icon moon-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="form-row settings-row">
+                        <div class="settings-info">
+                            <label class="settings-label">Default Folder</label>
+                            <span class="settings-desc">Default folder where audio files are saved on boot up.</span>
+                        </div>
+                        <div class="settings-dir-row">
+                            <div class="settings-dir-path" id="settings-dir-path">Loading...</div>
+                            <button class="btn-browse" id="btn-settings-browse">Browse</button>
+                        </div>
+                    </div>
+                    <div class="form-row settings-row">
+                        <div class="settings-info">
+                            <label class="settings-label">Language</label>
+                            <span class="settings-desc">Select the application user interface language.</span>
+                        </div>
+                        <div class="settings-lang-select-wrapper">
+                            <select id="settings-lang-select" class="settings-lang-select">
+                                <option value="en" selected>English</option>
+                                <option value="nl">Nederlands</option>
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                                <option value="es">Español</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
 
