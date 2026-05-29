@@ -34,10 +34,12 @@ class DownloadManager {
         this.startIdx = options.startIdx;
         this.endIdx = options.endIdx;
         this.selectedIds = options.selectedIds || null;
+        this.concurrency = options.concurrency || 1;
         this.listener = listener;
 
         this.cancelled = false;
-        this.activeProcess = null;
+        this.activeProcesses = new Set();
+        this.progressMap = {};
     }
 
     /**
@@ -45,9 +47,12 @@ class DownloadManager {
      */
     cancel() {
         this.cancelled = true;
-        if (this.activeProcess) {
-            this.activeProcess.kill('SIGTERM');
-        }
+        this.activeProcesses.forEach(proc => {
+            try {
+                proc.kill('SIGINT');
+            } catch (e) {}
+        });
+        this.activeProcesses.clear();
     }
 
     /**
@@ -93,25 +98,69 @@ class DownloadManager {
             const queueSize = downloadQueue.length;
             this.listener.onLog(`Starting download queue of ${queueSize} tracks.`);
 
-            // 4. Run downloads sequentially
+            // 4. Run downloads concurrently using worker pool
             let completed = 0;
-            for (let i = 0; i < queueSize; i++) {
-                if (this.cancelled) break;
+            this.progressMap = {};
+            downloadQueue.forEach(t => {
+                this.progressMap[t.id] = 0;
+            });
 
-                const track = downloadQueue[i];
-                const trackNum = actualStart + i;
-                this.listener.onStatusChange(`Downloading track ${i + 1} of ${queueSize}`, track.title);
-                this.listener.onLog(`Downloading [${trackNum}/${totalTracks}]: ${track.title}`);
+            const actualStart = (this.selectedIds && this.selectedIds.length > 0) ? 1 : Math.max(1, this.startIdx);
+            const concurrencyLimit = Math.max(1, parseInt(this.concurrency) || 1);
+            let nextIndex = 0;
+            const activeTitles = new Set();
+            const self = this;
 
-                try {
-                    await this.executeTrackDownload(ytDlpPath, ffmpegPath, track, i, queueSize);
-                    completed++;
-                    this.listener.onProgress(Math.round((completed / queueSize) * 100));
-                } catch (err) {
-                    if (this.cancelled) break;
-                    this.listener.onLog(`[Warning] Track failed: ${track.title}. Reason: ${err.message}`);
+            /**
+             * Updates the active status text showing the current simultaneous downloading tracks.
+             */
+            function updateSimultaneousStatus() {
+                if (self.cancelled) return;
+                if (activeTitles.size > 0) {
+                    const titlesStr = Array.from(activeTitles).join(', ');
+                    if (concurrencyLimit === 1) {
+                        const activeIndex = downloadQueue.findIndex(t => activeTitles.has(t.title));
+                        const trackNumber = activeIndex !== -1 ? (actualStart + activeIndex) : (completed + 1);
+                        self.listener.onStatusChange(`Downloading track ${trackNumber} of ${queueSize}`, titlesStr);
+                    } else {
+                        self.listener.onStatusChange(`Downloading ${activeTitles.size} tracks simultaneously`, titlesStr);
+                    }
                 }
             }
+
+            /**
+             * Asynchronous worker function that retrieves tracks from the queue and downloads them.
+             */
+            async function worker() {
+                while (nextIndex < queueSize && !self.cancelled) {
+                    const i = nextIndex++;
+                    const track = downloadQueue[i];
+                    const trackNum = (self.selectedIds && self.selectedIds.length > 0) ? (i + 1) : (actualStart + i);
+
+                    self.listener.onLog(`Downloading [${trackNum}/${totalTracks}]: ${track.title}`);
+
+                    try {
+                        activeTitles.add(track.title);
+                        updateSimultaneousStatus();
+                        await self.executeTrackDownload(ytDlpPath, ffmpegPath, track, i, queueSize);
+                        completed++;
+                    } catch (err) {
+                        if (self.cancelled) break;
+                        self.listener.onLog(`[Warning] Track failed: ${track.title}. Reason: ${err.message}`);
+                    } finally {
+                        activeTitles.delete(track.title);
+                        updateSimultaneousStatus();
+                    }
+                }
+            }
+
+            const workers = [];
+            const activeWorkersCount = Math.min(concurrencyLimit, queueSize);
+            for (let w = 0; w < activeWorkersCount; w++) {
+                workers.push(worker());
+            }
+
+            await Promise.all(workers);
 
             if (this.cancelled) {
                 this.listener.onComplete(false, null);
@@ -344,7 +393,7 @@ class DownloadManager {
             }
 
             const proc = spawn(ytDlpPath, args);
-            this.activeProcess = proc;
+            this.activeProcesses.add(proc);
 
             const progressRegex = /\[download\]\s+(\d+(?:\.\d+)?)%/;
 
@@ -354,8 +403,8 @@ class DownloadManager {
                     const match = line.match(progressRegex);
                     if (match) {
                         const trackPercent = parseFloat(match[1]);
-                        const overall = ((trackIndex * 100) + trackPercent) / totalItems;
-                        this.listener.onProgress(Math.round(overall));
+                        this.progressMap[track.id] = trackPercent;
+                        this.updateOverallProgress(totalItems);
                     }
                     if (line.startsWith('[download]') || line.startsWith('[ffmpeg]')) {
                         this.listener.onLog(line.trim());
@@ -369,19 +418,39 @@ class DownloadManager {
             });
 
             proc.on('close', (code) => {
-                this.activeProcess = null;
+                this.activeProcesses.delete(proc);
                 if (code !== 0 && !this.cancelled) {
+                    this.progressMap[track.id] = 100;
+                    this.updateOverallProgress(totalItems);
                     reject(new Error(`yt-dlp exited with error code ${code}`));
                 } else {
+                    this.progressMap[track.id] = 100;
+                    this.updateOverallProgress(totalItems);
                     resolve();
                 }
             });
 
             proc.on('error', (err) => {
-                this.activeProcess = null;
+                this.activeProcesses.delete(proc);
+                this.progressMap[track.id] = 100;
+                this.updateOverallProgress(totalItems);
                 reject(err);
             });
         });
+    }
+
+    /**
+     * Calculates and reports the overall aggregated download progress percentage.
+     * @param {number} totalItems - Total number of items in the queue
+     */
+    updateOverallProgress(totalItems) {
+        if (totalItems <= 0) return;
+        let sum = 0;
+        for (const id in this.progressMap) {
+            sum += this.progressMap[id];
+        }
+        const overall = sum / totalItems;
+        this.listener.onProgress(Math.min(100, Math.round(overall)));
     }
 
     // ================================================================
@@ -465,17 +534,17 @@ class DownloadManager {
                     }
                 `;
                 const proc = spawn('powershell', ['-NoProfile', '-Command', psScript]);
-                this.activeProcess = proc;
+                this.activeProcesses.add(proc);
 
                 let stderr = '';
                 proc.stderr.on('data', (d) => { stderr += d.toString(); });
                 proc.on('close', (code) => {
-                    this.activeProcess = null;
+                    this.activeProcesses.delete(proc);
                     if (code === 0) resolve();
                     else reject(new Error(stderr || 'FFmpeg extraction failed'));
                 });
                 proc.on('error', (err) => {
-                    this.activeProcess = null;
+                    this.activeProcesses.delete(proc);
                     reject(err);
                 });
             });

@@ -11,7 +11,7 @@ import socket
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
 # Global flags and references to manage the single-user active download process
-active_process = None
+active_processes = set()
 cancelled = False
 download_lock = threading.Lock()
 
@@ -32,7 +32,7 @@ class DownloadManager:
     progress callback triggers.
     """
 
-    def __init__(self, url, output_dir, audio_format, quality, start_idx, end_idx, selected_ids, sse_callback):
+    def __init__(self, url, output_dir, audio_format, quality, start_idx, end_idx, selected_ids, sse_callback, concurrency=1):
         """
         Initializes a download manager task.
         
@@ -44,6 +44,7 @@ class DownloadManager:
         :param end_idx: Playlist end item sequence number (-1 for all)
         :param selected_ids: List of video IDs to download (takes priority over ranges)
         :param sse_callback: Function to emit log, progress, status changes as SSE
+        :param concurrency: Number of tracks to download concurrently
         """
         self.url = url
         self.output_dir = output_dir
@@ -53,11 +54,12 @@ class DownloadManager:
         self.end_idx = end_idx
         self.selected_ids = selected_ids
         self.sse_callback = sse_callback
+        self.concurrency = concurrency
 
     def run(self):
         """
         Runs the full download task: resolves executables, gets tracks metadata,
-        and triggers sequential track downloads.
+        and triggers concurrent track downloads using a thread pool.
         """
         global cancelled
         try:
@@ -75,7 +77,7 @@ class DownloadManager:
 
             # 3. Query playlist details
             self.sse_callback("status", {"status": "Querying URL...", "track": ""})
-            self.sse_callback("log", "Fetching metadata from YouTube...")
+            self.sse_callback("log", "Fetching metadata details for URL...")
             tracks = self.fetch_track_list(yt_dlp_path)
 
             if cancelled:
@@ -86,7 +88,7 @@ class DownloadManager:
                 raise Exception("Could not find any videos or metadata for the provided URL.")
 
             total_tracks = len(tracks)
-            self.sse_callback("log", f"Found ${total_tracks} video(s) in source link.")
+            self.sse_callback("log", f"Found {total_tracks} video(s) in source link.")
 
             # Filter queue based on selected IDs if present
             if self.selected_ids:
@@ -102,24 +104,73 @@ class DownloadManager:
             queue_size = len(download_queue)
             self.sse_callback("log", f"Starting download queue of {queue_size} tracks.")
 
-            # 4. Download each track in queue
+            # 4. Download tracks concurrently
             completed = 0
-            for i, track in enumerate(download_queue):
-                if cancelled:
-                    break
+            concurrency_limit = max(1, int(self.concurrency))
 
-                track_num = actual_start + i
-                self.sse_callback("status", {"status": f"Downloading track {i + 1} of {queue_size}", "track": track["title"]})
+            progress_lock = threading.Lock()
+            progress_map = {track["id"]: 0.0 for track in download_queue}
+
+            active_titles = set()
+            active_titles_lock = threading.Lock()
+
+            def update_progress(track_id, percent):
+                with progress_lock:
+                    progress_map[track_id] = percent
+                    total_pct = sum(progress_map.values())
+                    overall = int(total_pct / queue_size)
+                    self.sse_callback("progress", min(100, overall))
+
+            def update_simultaneous_status():
+                if cancelled:
+                    return
+                with active_titles_lock:
+                    if active_titles:
+                        titles_str = ", ".join(active_titles)
+                        if concurrency_limit == 1:
+                            try:
+                                active_index = next(idx for idx, t in enumerate(download_queue) if t["title"] in active_titles)
+                                track_num = (active_index + 1) if self.selected_ids else (actual_start + active_index)
+                            except StopIteration:
+                                track_num = completed + 1
+                            self.sse_callback("status", {"status": f"Downloading track {track_num} of {queue_size}", "track": titles_str})
+                        else:
+                            self.sse_callback("status", {"status": f"Downloading {len(active_titles)} tracks simultaneously", "track": titles_str})
+
+            def download_worker(idx_and_track):
+                nonlocal completed
+                idx, track = idx_and_track
+                if cancelled:
+                    return
+
+                track_num = (idx + 1) if self.selected_ids else (actual_start + idx)
                 self.sse_callback("log", f"Downloading [{track_num}/{total_tracks}]: {track['title']}")
 
+                with active_titles_lock:
+                    active_titles.add(track["title"])
+                update_simultaneous_status()
+
                 try:
-                    self.execute_track_download(yt_dlp_path, ffmpeg_path, track, i, queue_size)
-                    completed += 1
-                    self.sse_callback("progress", int((completed / queue_size) * 100))
+                    def track_progress_callback(percent):
+                        update_progress(track["id"], percent)
+
+                    self.execute_track_download(yt_dlp_path, ffmpeg_path, track, idx, queue_size, progress_callback=track_progress_callback)
+                    with progress_lock:
+                        completed += 1
                 except Exception as err:
                     if cancelled:
-                        break
+                        return
                     self.sse_callback("log", f"[Warning] Track failed: {track['title']}. Reason: {str(err)}")
+                finally:
+                    with active_titles_lock:
+                        if track["title"] in active_titles:
+                            active_titles.remove(track["title"])
+                    update_simultaneous_status()
+                    update_progress(track["id"], 100.0)
+
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=concurrency_limit) as executor:
+                list(executor.map(download_worker, enumerate(download_queue)))
 
             # Terminate and finalize
             if cancelled:
@@ -250,7 +301,7 @@ class DownloadManager:
         :param yt_dlp_path: Executable path to yt-dlp
         :return: List of dicts containing track 'title', 'id', 'duration', and 'channel'
         """
-        global active_process
+        global active_processes
         cmd = [yt_dlp_path, "--flat-playlist", "--dump-json", self.url]
         
         startupinfo = None
@@ -260,36 +311,39 @@ class DownloadManager:
             
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, 
                                 text=True, encoding='utf-8', errors='replace', startupinfo=startupinfo)
-        active_process = proc
+        active_processes.add(proc)
         
         tracks = []
-        # Parse flat JSON outputs line by line
-        for line in proc.stdout:
-            if not line.strip():
-                continue
-            try:
-                data = json.loads(line)
-                if "id" in data and "title" in data:
-                    tracks.append({
-                        "title": data["title"],
-                        "id": data["id"],
-                        "duration": data.get("duration"),
-                        "channel": data.get("channel") or data.get("uploader") or "Unknown Channel"
-                    })
-            except:
-                pass
-                
-        proc.wait()
-        active_process = None
-        
+        try:
+            # Parse flat JSON outputs line by line
+            for line in proc.stdout:
+                if not line.strip():
+                    continue
+                try:
+                    data = json.loads(line)
+                    if "id" in data and "title" in data:
+                        tracks.append({
+                            "title": data["title"],
+                            "id": data["id"],
+                            "duration": data.get("duration"),
+                            "channel": data.get("channel") or data.get("uploader") or "Unknown Channel"
+                        })
+                except:
+                    pass
+        finally:
+            proc.wait()
+            active_processes.discard(proc)
+            
         # Fallback for single video files
-        if not tracks:
+        if not tracks and not cancelled:
             cmd_single = [yt_dlp_path, "--dump-json", "--playlist-items", "1", self.url]
             proc_single = subprocess.Popen(cmd_single, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                            text=True, encoding='utf-8', errors='replace', startupinfo=startupinfo)
-            active_process = proc_single
-            stdout, _ = proc_single.communicate()
-            active_process = None
+            active_processes.add(proc_single)
+            try:
+                stdout, _ = proc_single.communicate()
+            finally:
+                active_processes.discard(proc_single)
             
             if stdout.strip():
                 try:
@@ -306,7 +360,7 @@ class DownloadManager:
                     
         return tracks
 
-    def execute_track_download(self, yt_dlp_path, ffmpeg_path, track, track_idx, total_items):
+    def execute_track_download(self, yt_dlp_path, ffmpeg_path, track, track_idx, total_items, progress_callback=None):
         """
         Downloads a single track. Parses download rates and updates global progress.
         
@@ -315,8 +369,9 @@ class DownloadManager:
         :param track: Dict containing title and id
         :param track_idx: Download offset sequence number in the current queue (0-based)
         :param total_items: Total length of download queue
+        :param progress_callback: Optional callback to receive raw progress percentages
         """
-        global active_process
+        global active_processes
         video_url = f"https://www.youtube.com/watch?v={track['id']}"
         output_template = os.path.join(self.output_dir, "%(title)s.%(ext)s")
         
@@ -342,34 +397,38 @@ class DownloadManager:
         # Combine stdout and stderr to avoid classic buffer deadlock
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
                                 text=True, encoding='utf-8', errors='replace', startupinfo=startupinfo)
-        active_process = proc
+        active_processes.add(proc)
         
-        # Read lines from the combined stream
-        for line in proc.stdout:
-            line_str = line.strip()
-            if not line_str:
-                continue
-                
-            if "[download]" in line_str and "%" in line_str:
-                try:
-                    parts = line_str.split()
-                    for p in parts:
-                        if "%" in p:
-                            pct_val = float(p.replace("%", ""))
-                            overall = ((track_idx * 100) + pct_val) / total_items
-                            self.sse_callback("progress", int(overall))
-                            break
-                except:
-                    pass
+        try:
+            # Read lines from the combined stream
+            for line in proc.stdout:
+                line_str = line.strip()
+                if not line_str:
+                    continue
                     
-            if (line_str.startswith("[download]") or 
-                line_str.startswith("[ffmpeg]") or 
-                line_str.lower().startswith("error") or 
-                line_str.lower().startswith("warning")):
-                self.sse_callback("log", line_str)
-                
-        proc.wait()
-        active_process = None
+                if "[download]" in line_str and "%" in line_str:
+                    try:
+                        parts = line_str.split()
+                        for p in parts:
+                            if "%" in p:
+                                pct_val = float(p.replace("%", ""))
+                                if progress_callback:
+                                    progress_callback(pct_val)
+                                else:
+                                    overall = ((track_idx * 100) + pct_val) / total_items
+                                    self.sse_callback("progress", int(overall))
+                                break
+                    except:
+                        pass
+                        
+                if (line_str.startswith("[download]") or 
+                    line_str.startswith("[ffmpeg]") or 
+                    line_str.lower().startswith("error") or 
+                    line_str.lower().startswith("warning")):
+                    self.sse_callback("log", line_str)
+        finally:
+            proc.wait()
+            active_processes.discard(proc)
         
         if proc.returncode != 0 and not cancelled:
             raise Exception(f"yt-dlp exited with error code {proc.returncode}")
@@ -465,13 +524,14 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
         GET /api/cancel
         Sends termination signals to active download task processes.
         """
-        global cancelled, active_process
+        global cancelled, active_processes
         cancelled = True
-        if active_process:
+        for proc in list(active_processes):
             try:
-                active_process.terminate()
+                proc.terminate()
             except:
                 pass
+        active_processes.clear()
                 
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -512,7 +572,7 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
         GET /api/download?...
         Initializes Server-Sent Events (SSE) stream. Blocks handler and triggers download threads.
         """
-        global cancelled, active_process
+        global cancelled, active_processes
         params = urllib.parse.parse_qs(query_string)
         
         url = params.get("url", [""])[0]
@@ -527,10 +587,15 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             start_idx = 1
             end_idx = -1
 
+        try:
+            concurrency = int(params.get("concurrency", ["1"])[0])
+        except:
+            concurrency = 1
+            
         selected_ids = params.get("selectedIds", [])
         if len(selected_ids) == 1 and "," in selected_ids[0]:
             selected_ids = selected_ids[0].split(",")
-
+            
         # Setup chunked SSE header
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
@@ -538,7 +603,7 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
         self.send_header("Connection", "keep-alive")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
-
+        
         # Define SSE package transmitter
         def emit_sse(event, data):
             try:
@@ -548,16 +613,16 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             except:
                 # Triggers if browser cancels connections or shuts down tabs
                 pass
-
+                
         # Use mutex lock to prevent concurrent download schedules on the same server
         acquired = download_lock.acquire(blocking=False)
         if not acquired:
             emit_sse("complete", {"success": False, "errorMsg": "Another download job is currently running on the server."})
             return
-
+            
         try:
             cancelled = False
-            manager = DownloadManager(url, output_dir, audio_format, quality, start_idx, end_idx, selected_ids, emit_sse)
+            manager = DownloadManager(url, output_dir, audio_format, quality, start_idx, end_idx, selected_ids, emit_sse, concurrency)
             manager.run()
         finally:
             download_lock.release()

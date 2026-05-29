@@ -1243,7 +1243,6 @@ html, body {
     gap: 16px;
     padding: 24px;
     min-width: 320px;
-    flex: 1;
 }
 
 /* Horizontal settings configuration panel element layout row spacing */
@@ -1381,5 +1380,37 @@ html, body {
 /* Focused border highlight for settings language selector */
 .settings-lang-select:focus {
     border-color: var(--border-focus);
+}
+
+/* Scrollable vertical wrapper container for settings card sections */
+.settings-sections-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Inner setting section block holding a header title and option card */
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Sub-headers separating settings categories in uppercase zinc labels */
+.settings-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-left: 2px;
+}
+
+/* Utility class to hide element displays dynamically */
+.hidden {
+    display: none !important;
 }
 

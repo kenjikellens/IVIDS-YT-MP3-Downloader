@@ -15,6 +15,71 @@ var loadedTracks = [];
 /** @type {number|null} Debounce timer handle for URL input auto-load triggering */
 var autoLoadDebounceTimer = null;
 
+/** @type {Object} The current language translation key-value mappings dictionary */
+var currentLocaleData = {};
+
+/**
+ * Retrieves the translation string for a given key from the loaded locale dictionary.
+ * Falls back to the provided default value if the key does not exist.
+ */
+function getTranslation(key, defaultValue) {
+    if (currentLocaleData && currentLocaleData[key] !== undefined) {
+        return currentLocaleData[key];
+    }
+    return defaultValue;
+}
+
+/**
+ * Updates the text content and placeholder attributes of all localized DOM elements.
+ * Triggers re-rendering of active previews and download histories using the new translation.
+ */
+function applyTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        var trans = getTranslation(key, '');
+        if (trans) {
+            el.textContent = trans;
+        }
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n-placeholder');
+        var trans = getTranslation(key, '');
+        if (trans) {
+            el.setAttribute('placeholder', trans);
+        }
+    });
+    
+    renderDownloadHistory();
+    if (loadedTracks && loadedTracks.length > 0) {
+        renderPreview(loadedTracks);
+    }
+}
+
+/**
+ * Asynchronously fetches the JSON locale file for the selected language code.
+ * Falls back to English on failure and triggers the DOM translation updates.
+ */
+async function loadLanguage(langCode) {
+    try {
+        var response = await fetch('i18n/' + langCode + '.json');
+        if (!response.ok) throw new Error('Failed to load language JSON');
+        currentLocaleData = await response.json();
+    } catch (e) {
+        console.warn('Could not load translations for ' + langCode + ', falling back to English.', e);
+        try {
+            var fallbackResponse = await fetch('i18n/en.json');
+            if (fallbackResponse.ok) {
+                currentLocaleData = await fallbackResponse.json();
+            }
+        } catch (err) {
+            console.error('Failed to load fallback English translation.', err);
+        }
+    }
+    applyTranslations();
+}
+
+
 /**
  * Toggles the advanced settings dropdown panel visibility.
  * Toggles 'visible' utility class on the panel container and flips the chevron.
@@ -139,8 +204,8 @@ function setOutputDir(folderPath) {
 }
 
 /**
- * Prompts native OS directory browser dialogs.
- * Integrates Electron ContextBridge dialogue APIs or Python REST filedialog dialog triggers.
+ * Opens the native directory chooser dialog to update the active output save folder.
+ * Stores the choice in LocalStorage and logs the outcome to the console.
  */
 async function browseDirectory() {
     try {
@@ -158,16 +223,19 @@ async function browseDirectory() {
 
         if (folderPath) {
             setOutputDir(folderPath);
-            addLog('Output folder set to: ' + folderPath);
+            try {
+                localStorage.setItem('last-dir', folderPath);
+            } catch (e) {}
+            addLog(getTranslation('log_output_folder_set', 'Output folder set to: ') + folderPath);
         }
     } catch (err) {
-        addLog('[Error] Failed to select directory: ' + err.message);
+        addLog('[Error] ' + getTranslation('log_failed_select_dir', 'Failed to select directory: ') + err.message);
     }
 }
 
 /**
- * Prompts native OS directory browser dialog for default download location.
- * Saves selected path to LocalStorage and updates both main and settings path displays.
+ * Opens the native directory chooser dialog to update the default startup download folder.
+ * Stores the choice in LocalStorage and updates settings and main path displays.
  */
 async function browseDefaultDirectory() {
     try {
@@ -184,27 +252,110 @@ async function browseDefaultDirectory() {
         }
 
         if (folderPath) {
-            localStorage.setItem('default-dir', folderPath);
+            try {
+                localStorage.setItem('custom-dir', folderPath);
+                localStorage.setItem('last-dir', folderPath);
+            } catch (e) {}
             setOutputDir(folderPath);
             var settingsDirEl = document.getElementById('settings-dir-path');
             if (settingsDirEl) {
                 settingsDirEl.textContent = folderPath;
             }
-            addLog('Default output folder set to: ' + folderPath);
+            addLog(getTranslation('log_custom_folder_set', 'Custom default folder set to: ') + folderPath);
         }
     } catch (err) {
-        addLog('[Error] Failed to select default directory: ' + err.message);
+        addLog('[Error] ' + getTranslation('log_failed_select_default_dir', 'Failed to select default directory: ') + err.message);
     }
 }
 
 /**
- * Parses track durations in seconds into formatted MM:SS length values.
- * 
- * @param {number|null} durationSeconds - Video duration count in seconds
- * @returns {string} Formatted length string
+ * Loads and resolves the initial output download folder path according to the saved mode preference.
+ * Auto-detects Electron or REST fallback API environments for system default resolve.
+ */
+async function initOutputDirectory() {
+    var isElectron = !!window.electronAPI;
+    var mode = 'standard';
+    try {
+        mode = localStorage.getItem('dir-mode') || 'standard';
+    } catch (e) {}
+
+    var activeDir = null;
+    if (mode === 'custom') {
+        try {
+            activeDir = localStorage.getItem('custom-dir');
+        } catch (e) {}
+    } else if (mode === 'last') {
+        try {
+            activeDir = localStorage.getItem('last-dir');
+        } catch (e) {}
+    }
+
+    if (activeDir) {
+        setOutputDir(activeDir);
+        var settingsDirEl = document.getElementById('settings-dir-path');
+        if (settingsDirEl) {
+            settingsDirEl.textContent = activeDir;
+        }
+    } else {
+        try {
+            var standardPath = null;
+            if (isElectron) {
+                standardPath = await window.electronAPI.getDefaultDir();
+            } else {
+                var res = await fetch('/api/get-default-dir');
+                if (res.ok) {
+                    var data = await res.json();
+                    standardPath = data.path;
+                }
+            }
+            if (standardPath) {
+                setOutputDir(standardPath);
+                var settingsDirEl = document.getElementById('settings-dir-path');
+                if (settingsDirEl) {
+                    settingsDirEl.textContent = standardPath;
+                }
+            }
+        } catch (e) {
+            var fallback = isElectron ? 'C:\\Downloads' : '/Downloads';
+            setOutputDir(fallback);
+            var settingsDirEl = document.getElementById('settings-dir-path');
+            if (settingsDirEl) {
+                settingsDirEl.textContent = fallback;
+            }
+        }
+    }
+}
+
+/**
+ * Handles directory mode changes from settings, toggles custom browse row visibility, and re-resolves the active path.
+ */
+async function handleDirModeChange() {
+    var modeSelect = document.getElementById('settings-dir-mode');
+    if (!modeSelect) return;
+
+    var mode = modeSelect.value;
+    try {
+        localStorage.setItem('dir-mode', mode);
+    } catch (e) {}
+
+    var customRow = document.getElementById('settings-custom-dir-row');
+    if (customRow) {
+        if (mode === 'custom') {
+            customRow.classList.remove('hidden');
+        } else {
+            customRow.classList.add('hidden');
+        }
+    }
+
+    await initOutputDirectory();
+}
+
+/**
+ * Formats a track duration value in seconds to a human-readable MM:SS string.
+ * Returns a localized unknown string if duration is invalid or not available.
  */
 function formatDuration(durationSeconds) {
-    if (!durationSeconds || isNaN(durationSeconds)) return 'Unknown';
+    if (!durationSeconds || isNaN(durationSeconds)) return getTranslation('preview_unknown', 'Unknown');
     var minutes = Math.floor(durationSeconds / 60);
     var seconds = Math.floor(durationSeconds % 60);
     if (seconds < 10) seconds = '0' + seconds;
@@ -212,8 +363,8 @@ function formatDuration(durationSeconds) {
 }
 
 /**
- * Triggers backend flat-playlist queries to parse metadata.
- * Populates single or playlist track preview cards list with checkboxes.
+ * Requests track list metadata details from the backend for the entered YouTube URL.
+ * Renders the preview panel state and prints diagnostic logs to the output console.
  */
 async function loadMetadata() {
     var urlInput = document.getElementById('url-input');
@@ -226,11 +377,11 @@ async function loadMetadata() {
         btnLoad.textContent = 'Loading...';
     }
 
-    addLog('Fetching metadata details for URL...');
+    addLog(getTranslation('log_fetching_metadata', 'Fetching metadata details for URL...'));
 
     // Switch previews panel states to empty/loading placeholder
     showPreviewState('empty');
-    document.getElementById('state-empty').innerHTML = '<p>Loading tracks metadata...</p>';
+    document.getElementById('state-empty').innerHTML = '<p>' + getTranslation('preview_loading', 'Loading tracks metadata...') + '</p>';
 
     try {
         var isElectron = !!window.electronAPI;
@@ -251,7 +402,7 @@ async function loadMetadata() {
         loadedTracks = tracks;
         renderPreview(tracks);
     } catch (err) {
-        addLog('[Error] Failed loading metadata: ' + err.message);
+        addLog('[Error] ' + getTranslation('log_failed_metadata', 'Failed loading metadata: ') + err.message);
         document.getElementById('state-empty').innerHTML = 
             '<svg class="preview-empty-icon" viewBox="0 0 24 24" width="44" height="44">' +
                 '<path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9.5 16.5l7-4.5-7-4.5v9z"/>' +
@@ -285,10 +436,8 @@ function showPreviewState(state) {
 }
 
 /**
- * Loops and renders track card elements inside the preview panel container.
- * Renders a single metadata card if length is 1, or checklist arrays if greater.
- * 
- * @param {Array<Object>} tracks - Array of track metadata objects
+ * Dynamically builds and inserts HTML preview cards for loaded single tracks or playlist checklist items.
+ * Translates labels and quantities based on the current active interface language.
  */
 function renderPreview(tracks) {
     if (!tracks || tracks.length === 0) {
@@ -297,7 +446,7 @@ function renderPreview(tracks) {
             '<svg class="preview-empty-icon" viewBox="0 0 24 24" width="44" height="44">' +
                 '<path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9.5 16.5l7-4.5-7-4.5v9z"/>' +
             '</svg>' +
-            '<p>No tracks or video information found.</p>';
+            '<p>' + getTranslation('preview_no_tracks', 'No tracks or video information found.') + '</p>';
         return;
     }
 
@@ -323,12 +472,17 @@ function renderPreview(tracks) {
                     '<div class="channel-avatar">' + initials + '</div>' +
                     '<span>' + track.channel + '</span>' +
                 '</div>' +
-                '<div style="font-size:11px; color:var(--text-muted); margin-top: 4px;">Length: ' + durationText + '</div>' +
+                '<div style="font-size:11px; color:var(--text-muted); margin-top: 4px;">' + getTranslation('preview_length', 'Length: ') + durationText + '</div>' +
             '</div>';
     } else {
         // Render Playlist Cards Checklist
         showPreviewState('playlist');
-        document.getElementById('track-count-text').textContent = tracks.length + ' tracks found';
+        var tracksFoundTemplate = getTranslation('preview_tracks_found', 'tracks found');
+        var countText = tracks.length + ' ' + tracksFoundTemplate;
+        if (tracksFoundTemplate.includes('{count}')) {
+            countText = tracksFoundTemplate.replace('{count}', tracks.length);
+        }
+        document.getElementById('track-count-text').textContent = countText;
 
         var list = document.getElementById('track-list');
         list.innerHTML = '';
@@ -338,7 +492,7 @@ function renderPreview(tracks) {
             label.className = 'track-item';
 
             var thumbUrl = 'https://img.youtube.com/vi/' + t.id + '/mqdefault.jpg';
-            var durationText = t.duration ? formatDuration(t.duration) : 'Unknown';
+            var durationText = t.duration ? formatDuration(t.duration) : getTranslation('preview_unknown', 'Unknown');
 
             label.innerHTML = 
                 '<input type="checkbox" class="track-cb" checked data-id="' + t.id + '">' +
@@ -348,7 +502,7 @@ function renderPreview(tracks) {
                 '<div class="track-info">' +
                     '<div class="track-title">' + (idx + 1) + '. ' + t.title + '</div>' +
                     '<div class="track-artist">' + t.channel + '</div>' +
-                    '<div class="track-length">Length: ' + durationText + '</div>' +
+                    '<div class="track-length">' + getTranslation('preview_length', 'Length: ') + durationText + '</div>' +
                 '</div>';
 
             list.appendChild(label);
@@ -368,13 +522,14 @@ function toggleSelectAll(checked) {
 }
 
 /**
- * Validates the inputs and triggers sequential background download queue schedules.
+ * Gathers active configuration parameters and initiates background download queue streams.
+ * Disables start controls, enables cancel controls, and sets up status stream listener callbacks.
  */
 function startDownload() {
     var urlInput = document.getElementById('url-input');
     var url = urlInput ? urlInput.value.trim() : '';
     if (!url) {
-        addLog('[Warning] Please enter a YouTube URL.');
+        addLog('[Warning] ' + getTranslation('log_warning_enter_url', 'Please enter a YouTube URL.'));
         return;
     }
 
@@ -397,7 +552,7 @@ function startDownload() {
 
     // If playlist items are loaded, require at least one checkbox selection
     if (loadedTracks.length > 1 && selectedIds.length === 0) {
-        addLog('[Warning] No playlist tracks are selected for download.');
+        addLog('[Warning] ' + getTranslation('log_warning_no_tracks', 'No playlist tracks are selected for download.'));
         return;
     }
 
@@ -411,7 +566,12 @@ function startDownload() {
     if (consoleElement) consoleElement.innerHTML = '';
 
     setProgress(0);
-    addLog('Initializing download job...');
+    addLog(getTranslation('log_init_job', 'Initializing download job...'));
+
+    var savedConcurrency = 1;
+    try {
+        savedConcurrency = parseInt(localStorage.getItem('app-concurrency')) || 1;
+    } catch (e) {}
 
     var options = {
         url: url,
@@ -420,7 +580,8 @@ function startDownload() {
         quality: quality,
         startIdx: 1,
         endIdx: -1,
-        selectedIds: selectedIds
+        selectedIds: selectedIds,
+        concurrency: savedConcurrency
     };
 
     var isElectron = !!window.electronAPI;
@@ -434,7 +595,8 @@ function startDownload() {
             format: options.format,
             quality: options.quality,
             startIdx: 1,
-            endIdx: -1
+            endIdx: -1,
+            concurrency: options.concurrency
         });
         if (selectedIds.length > 0) {
             queryParams.append('selectedIds', selectedIds.join(','));
@@ -482,10 +644,11 @@ function startDownload() {
 }
 
 /**
- * Signals backend download managers to cancel active execution streams.
+ * Signals backend download subprocess processes or SSE streams to abort active download tasks.
+ * Logs the cancellation request event to the diagnostic console.
  */
 async function cancelDownload() {
-    addLog('Sending cancel request...');
+    addLog(getTranslation('log_cancel_request', 'Sending cancel request...'));
     var isElectron = !!window.electronAPI;
     if (isElectron) {
         window.electronAPI.cancelDownload();
@@ -513,24 +676,53 @@ function setProgress(percent) {
 }
 
 /**
- * Updates the text descriptions inside progress headers.
- * 
- * @param {string} status - Description indicating active process steps
- * @param {string} track - Active filename/track heading description
+ * Updates the status header text and active track labels using translated terms.
+ * Resolves localized status phrases and prefixes according to the current locale.
  */
 function setStatus(status, track) {
     var statusText = document.getElementById('status-text');
     var trackText = document.getElementById('track-text');
-    if (statusText) statusText.textContent = 'Status: ' + status;
-    if (trackText) trackText.textContent = track;
+    
+    var translatedStatus = status;
+    if (status === 'Idle') {
+        translatedStatus = getTranslation('status_idle', 'Idle');
+    } else if (status === 'Querying URL...') {
+        translatedStatus = getTranslation('status_querying', 'Querying URL...');
+    } else if (status === 'Setup...') {
+        translatedStatus = getTranslation('status_setup', 'Setup...');
+    } else if (status === 'Completed') {
+        translatedStatus = getTranslation('status_completed', 'Completed');
+    } else if (status === 'Failed') {
+        translatedStatus = getTranslation('status_failed', 'Failed');
+    } else if (status && status.startsWith('Downloading track ')) {
+        var match = status.match(/Downloading track (\d+) of (\d+)/);
+        if (match) {
+            var current = match[1];
+            var total = match[2];
+            var template = getTranslation('status_downloading_track', 'Downloading track {current} of {total}');
+            translatedStatus = template.replace('{current}', current).replace('{total}', total);
+        } else {
+            translatedStatus = getTranslation('status_downloading', 'Downloading');
+        }
+    }
+    
+    var translatedTrack = track;
+    if (track === 'Finished!') {
+        translatedTrack = getTranslation('status_finished', 'Finished!');
+    } else if (track === 'Downloading yt-dlp') {
+        translatedTrack = getTranslation('status_downloading_ytdlp', 'Downloading yt-dlp');
+    } else if (track === 'Downloading FFmpeg') {
+        translatedTrack = getTranslation('status_downloading_ffmpeg', 'Downloading FFmpeg');
+    }
+    
+    var prefix = getTranslation('status_prefix', 'Status: ');
+    if (statusText) statusText.textContent = prefix + translatedStatus;
+    if (trackText) trackText.textContent = translatedTrack;
 }
 
 /**
- * Restores visual download buttons and logs completions.
- * Adds downloads to history storage arrays on successful completions.
- * 
- * @param {boolean} success - True if queue resolved without fatal crashes
- * @param {string|null} errorMsg - Summary error logs
+ * Re-enables download control buttons and records execution status details in history lists.
+ * Evaluates job outcomes, logs success or error results, and translates progress badges.
  */
 function onComplete(success, errorMsg) {
     var btnDownload = document.getElementById('btn-download');
@@ -553,23 +745,31 @@ function onComplete(success, errorMsg) {
         document.querySelectorAll('.track-cb').forEach(function(cb) {
             if (cb.checked) selectedCount++;
         });
-        targetTitle = 'Playlist Queue (' + selectedCount + ' tracks)';
+        var template = getTranslation('dl_playlist_queue', 'Playlist Queue ({count} tracks)');
+        targetTitle = template.replace('{count}', selectedCount);
+    }
+
+    var metaInfo = '';
+    if (f === 'best') {
+        metaInfo = getTranslation('dl_meta_original', 'Original Quality');
+    } else {
+        metaInfo = f.toUpperCase() + ' • ' + q.replace('k', ' kbps');
     }
 
     if (success) {
         setProgress(100);
         setStatus('Completed', 'Finished!');
-        addLog('[Success] All tasks finished successfully!');
+        addLog('[Success] ' + getTranslation('log_success_finished', 'All tasks finished successfully!'));
         
-        saveDownloadRecord(targetTitle, f.toUpperCase() + ' • ' + q.replace('k', ' kbps'), true);
+        saveDownloadRecord(targetTitle, metaInfo, true);
     } else {
         setStatus('Failed', '');
         if (errorMsg) {
             addLog('[Error] ' + errorMsg);
-            saveDownloadRecord(targetTitle, f.toUpperCase() + ' • ' + q.replace('k', ' kbps') + ' • ' + errorMsg, false);
+            saveDownloadRecord(targetTitle, metaInfo + ' • ' + errorMsg, false);
         } else {
-            addLog('[Warning] Job was cancelled.');
-            saveDownloadRecord(targetTitle, f.toUpperCase() + ' • ' + q.replace('k', ' kbps') + ' • Cancelled', false);
+            addLog('[Warning] ' + getTranslation('log_warning_cancelled', 'Job was cancelled.'));
+            saveDownloadRecord(targetTitle, metaInfo + ' • ' + getTranslation('dl_meta_cancelled', 'Cancelled'), false);
         }
     }
 }
@@ -655,7 +855,7 @@ function renderDownloadHistory() {
 
             var svgIcon = '<svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>';
             var badgeClass = item.success ? 'success' : 'failed';
-            var badgeText = item.success ? 'Done' : 'Failed';
+            var badgeText = item.success ? getTranslation('dl_badge_done', 'Done') : getTranslation('dl_badge_failed', 'Failed');
 
             div.innerHTML = 
                 '<div class="dl-icon">' + svgIcon + '</div>' +
@@ -671,14 +871,31 @@ function renderDownloadHistory() {
 }
 
 /**
- * Flushes all downloaded elements in local storage history array cache.
+ * Flushes all recorded download records from LocalStorage cache and clears the UI history lists.
+ * Logs the history clear operation to the diagnostic output console.
  */
 function clearDownloadHistory() {
     try {
         localStorage.removeItem('dl-history');
     } catch (e) {}
     renderDownloadHistory();
-    addLog('Downloads history cleared.');
+    addLog(getTranslation('log_history_cleared', 'Downloads history cleared.'));
+}
+
+/**
+ * Enables or disables the quality selection dropdown based on the chosen audio format.
+ * Disables the dropdown for original untouched streams since they do not undergo transcoding.
+ */
+function handleFormatChange() {
+    var formatSelect = document.getElementById('format-select');
+    var qualitySelect = document.getElementById('quality-select');
+    if (formatSelect && qualitySelect) {
+        if (formatSelect.value === 'best') {
+            qualitySelect.disabled = true;
+        } else {
+            qualitySelect.disabled = false;
+        }
+    }
 }
 
 // ===== APPLICATION INITIAL SETUP =====
@@ -731,6 +948,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (btnSelectAll) btnSelectAll.addEventListener('click', () => toggleSelectAll(true));
     if (btnDeselectAll) btnDeselectAll.addEventListener('click', () => toggleSelectAll(false));
 
+    // Format select change trigger
+    var formatSelect = document.getElementById('format-select');
+    if (formatSelect) {
+        formatSelect.addEventListener('change', handleFormatChange);
+        handleFormatChange();
+    }
+
     // Input changes triggers auto metadata loads
     var urlInput = document.getElementById('url-input');
     if (urlInput) {
@@ -754,19 +978,61 @@ window.addEventListener('DOMContentLoaded', async () => {
     var btnSettingsBrowse = document.getElementById('btn-settings-browse');
     if (btnSettingsBrowse) btnSettingsBrowse.addEventListener('click', browseDefaultDirectory);
 
+    // Load initial default directory mode preference
+    var dirModeSelect = document.getElementById('settings-dir-mode');
+    if (dirModeSelect) {
+        var savedMode = 'standard';
+        try {
+            savedMode = localStorage.getItem('dir-mode') || 'standard';
+        } catch (e) {}
+        dirModeSelect.value = savedMode;
+
+        var customRow = document.getElementById('settings-custom-dir-row');
+        if (customRow) {
+            if (savedMode === 'custom') {
+                customRow.classList.remove('hidden');
+            } else {
+                customRow.classList.add('hidden');
+            }
+        }
+
+        dirModeSelect.addEventListener('change', handleDirModeChange);
+    }
+
+    // Load initial concurrency (multidownload) preference
+    var concurrencySelect = document.getElementById('settings-concurrency');
+    if (concurrencySelect) {
+        var savedConcurrency = '1';
+        try {
+            savedConcurrency = localStorage.getItem('app-concurrency') || '1';
+        } catch (e) {}
+        concurrencySelect.value = savedConcurrency;
+
+        /** Saves the selected concurrency level to localStorage when changed. */
+        concurrencySelect.addEventListener('change', function() {
+            try {
+                localStorage.setItem('app-concurrency', concurrencySelect.value);
+                addLog(getTranslation('log_concurrency_saved', 'Simultaneous downloads set to: ') + concurrencySelect.value);
+            } catch (e) {}
+        });
+    }
+
     // Load initial language preference
+    var savedLang = 'en';
+    try {
+        savedLang = localStorage.getItem('app-lang') || 'en';
+    } catch (e) {}
+    await loadLanguage(savedLang);
+
     var langSelect = document.getElementById('settings-lang-select');
     if (langSelect) {
-        var savedLang = 'en';
-        try {
-            savedLang = localStorage.getItem('app-lang') || 'en';
-        } catch (e) {}
         langSelect.value = savedLang;
 
-        langSelect.addEventListener('change', function() {
+        langSelect.addEventListener('change', async function() {
             try {
                 localStorage.setItem('app-lang', langSelect.value);
-                addLog('Language preference saved: ' + langSelect.value.toUpperCase());
+                await loadLanguage(langSelect.value);
+                addLog(getTranslation('log_lang_saved', 'Language preference saved: ') + langSelect.value.toUpperCase());
             } catch (e) {}
         });
     }
@@ -788,71 +1054,15 @@ window.addEventListener('DOMContentLoaded', async () => {
         window.electronAPI.onStatus((data) => setStatus(data.status, data.track));
         window.electronAPI.onComplete((data) => onComplete(data.success, data.errorMsg));
 
-        // Get default folder path
-        var savedDir = null;
-        try {
-            savedDir = localStorage.getItem('default-dir');
-        } catch (e) {}
-
-        if (savedDir) {
-            setOutputDir(savedDir);
-            var settingsDirEl = document.getElementById('settings-dir-path');
-            if (settingsDirEl) {
-                settingsDirEl.textContent = savedDir;
-            }
-        } else {
-            try {
-                var defaultDir = await window.electronAPI.getDefaultDir();
-                setOutputDir(defaultDir);
-                var settingsDirEl = document.getElementById('settings-dir-path');
-                if (settingsDirEl) {
-                    settingsDirEl.textContent = defaultDir;
-                }
-            } catch (e) {
-                setOutputDir('C:\\Downloads');
-                var settingsDirEl = document.getElementById('settings-dir-path');
-                if (settingsDirEl) {
-                    settingsDirEl.textContent = 'C:\\Downloads';
-                }
-            }
-        }
+        // Resolve output directory configuration
+        await initOutputDirectory();
     } else {
         // Browser Mode fallback overrides
         var titlebar = document.getElementById('app-titlebar');
         if (titlebar) titlebar.style.display = 'none';
         document.documentElement.classList.add('browser-mode');
 
-        var savedDir = null;
-        try {
-            savedDir = localStorage.getItem('default-dir');
-        } catch (e) {}
-
-        if (savedDir) {
-            setOutputDir(savedDir);
-            var settingsDirEl = document.getElementById('settings-dir-path');
-            if (settingsDirEl) {
-                settingsDirEl.textContent = savedDir;
-            }
-        } else {
-            try {
-                var res = await fetch('/api/get-default-dir');
-                if (res.ok) {
-                    var data = await res.json();
-                    if (data.path) {
-                        setOutputDir(data.path);
-                        var settingsDirEl = document.getElementById('settings-dir-path');
-                        if (settingsDirEl) {
-                            settingsDirEl.textContent = data.path;
-                        }
-                    }
-                }
-            } catch (e) {
-                setOutputDir('/Downloads');
-                var settingsDirEl = document.getElementById('settings-dir-path');
-                if (settingsDirEl) {
-                    settingsDirEl.textContent = '/Downloads';
-                }
-            }
-        }
+        // Resolve output directory configuration
+        await initOutputDirectory();
     }
 });
