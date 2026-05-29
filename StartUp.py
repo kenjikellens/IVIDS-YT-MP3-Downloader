@@ -361,6 +361,15 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
     and executing directory pickers or download SSE streams.
     """
 
+    def end_headers(self):
+        """
+        Appends anti-caching headers to all HTTP responses to prevent browser file caching.
+        """
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
     def do_GET(self):
         """
         Handles incoming GET requests. Route mapper.

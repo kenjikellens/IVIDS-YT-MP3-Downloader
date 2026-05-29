@@ -11,13 +11,60 @@ var activeEventSource = null;
 
 /**
  * Toggles the visibility of the advanced settings panel in the UI.
- * Toggles the 'visible' class on the settings panel container.
+ * Toggles the 'visible' class on the settings panel container and updates the chevron.
  */
 function toggleAdvanced() {
     var panel = document.getElementById('advanced-panel');
+    var chevron = document.getElementById('advanced-chevron');
     if (panel) {
-        panel.classList.toggle('visible');
+        var isVisible = panel.classList.toggle('visible');
+        if (chevron) {
+            chevron.textContent = isVisible ? '▲' : '▼';
+        }
     }
+}
+
+/**
+ * Changes the active user interface theme.
+ * Updates the global document root class and saves the preference to local storage.
+ * 
+ * @param {string} theme - The target theme name ('light' or 'dark')
+ */
+function changeTheme(theme) {
+    var themeBtn = document.getElementById('theme-btn');
+    if (theme === 'light') {
+        document.documentElement.classList.add('light-theme');
+        if (themeBtn) {
+            themeBtn.textContent = '🌙';
+            themeBtn.title = 'Switch to Dark Mode';
+        }
+    } else {
+        document.documentElement.classList.remove('light-theme');
+        if (themeBtn) {
+            themeBtn.textContent = '☀️';
+            themeBtn.title = 'Switch to Light Mode';
+        }
+    }
+    try {
+        localStorage.setItem('app-theme', theme);
+    } catch (e) {
+        // Catch and ignore local storage write permissions errors in sandboxed browser runs
+    }
+}
+
+/**
+ * Toggles the active theme between light and dark modes.
+ * Reads the current theme selection from storage and switches it.
+ */
+function toggleTheme() {
+    var currentTheme = 'dark';
+    try {
+        currentTheme = localStorage.getItem('app-theme') || 'dark';
+    } catch (e) {
+        // Fallback to default theme on storage read permission failure
+    }
+    var nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    changeTheme(nextTheme);
 }
 
 /**
@@ -35,7 +82,6 @@ function setOutputDir(path) {
 /**
  * Handles directory choosing dialog triggering.
  * Routes to Electron native dialog API if in Electron, or Python filedialog API if in browser.
- * This method is async.
  */
 async function browseDirectory() {
     try {
@@ -65,7 +111,6 @@ async function browseDirectory() {
 /**
  * Initiates the download task.
  * Reads form data, disables UI controls, and triggers the download runner.
- * Routes to Electron IPC send or opens a Python Server-Sent Events (SSE) EventSource stream.
  */
 function startDownload() {
     var urlInput = document.getElementById('url-input');
@@ -271,12 +316,114 @@ function addLog(msg) {
     }
 }
 
+// ===== YouTube Preview Helpers =====
+
+/** @type {number|null} Debounce timer handle for URL input preview updates */
+var previewDebounceTimer = null;
+
+/**
+ * Extracts a YouTube video ID or playlist ID from a given URL string.
+ * Returns an object with `type` ('video' or 'playlist') and the corresponding `id`.
+ *
+ * @param {string} url - The YouTube URL to parse
+ * @returns {{ type: string, id: string } | null} Parsed result or null if no match
+ */
+function extractYouTubeId(url) {
+    if (!url) return null;
+
+    // Match playlist URLs (list= parameter)
+    var playlistMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+
+    // Match standard video URLs (watch?v=, youtu.be/, embed/, shorts/)
+    var videoMatch = url.match(
+        /(?:youtube\.com\/(?:watch\?.*v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    );
+
+    // Prefer playlist embed if a list param is present
+    if (playlistMatch) {
+        return { type: 'playlist', id: playlistMatch[1] };
+    }
+    if (videoMatch) {
+        return { type: 'video', id: videoMatch[1] };
+    }
+    return null;
+}
+
+/**
+ * Updates the preview panel based on the current URL input value.
+ * Shows a YouTube embed iframe for valid URLs, or the empty state placeholder otherwise.
+ */
+function updatePreview() {
+    var urlInput = document.getElementById('url-input');
+    var emptyState = document.getElementById('preview-empty');
+    var embedContainer = document.getElementById('preview-embed');
+    var iframe = document.getElementById('preview-iframe');
+    if (!urlInput || !emptyState || !embedContainer || !iframe) return;
+
+    var parsed = extractYouTubeId(urlInput.value.trim());
+
+    if (parsed) {
+        var embedSrc = '';
+        if (parsed.type === 'playlist') {
+            embedSrc = 'https://www.youtube.com/embed/videoseries?list=' + parsed.id;
+        } else {
+            embedSrc = 'https://www.youtube.com/embed/' + parsed.id;
+        }
+
+        // Only reload iframe if the source actually changed
+        if (iframe.src !== embedSrc) {
+            iframe.src = embedSrc;
+        }
+        emptyState.style.display = 'none';
+        embedContainer.style.display = '';
+    } else {
+        iframe.src = '';
+        emptyState.style.display = '';
+        embedContainer.style.display = 'none';
+    }
+}
+
 // ===== Initial Registration and Setup =====
-/*
- * Listens for DOM load events to verify environment and dynamically configure
- * Electron IPC hooks/window actions, or hide custom titlebars inside standard web browsers.
+/**
+ * Setup hook running on DOM content loaded.
+ * Reconciles the runtime environment (Electron vs browser), fetches directories, and applies themes.
  */
 window.addEventListener('DOMContentLoaded', async () => {
+    // Bind UI control action event listeners
+    var btnBrowse = document.getElementById('btn-browse');
+    var advancedToggle = document.getElementById('advanced-toggle');
+    var btnDownload = document.getElementById('btn-download');
+    var btnCancel = document.getElementById('btn-cancel');
+    var themeBtn = document.getElementById('theme-btn');
+
+    if (btnBrowse) btnBrowse.addEventListener('click', browseDirectory);
+    if (advancedToggle) advancedToggle.addEventListener('click', toggleAdvanced);
+    if (btnDownload) btnDownload.addEventListener('click', startDownload);
+    if (btnCancel) btnCancel.addEventListener('click', cancelDownload);
+    if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
+    // Bind URL input listener with debounce to update preview panel
+    var urlInput = document.getElementById('url-input');
+    if (urlInput) {
+        urlInput.addEventListener('input', function () {
+            clearTimeout(previewDebounceTimer);
+            previewDebounceTimer = setTimeout(updatePreview, 400);
+        });
+        // Also update on paste immediately
+        urlInput.addEventListener('paste', function () {
+            setTimeout(updatePreview, 50);
+        });
+    }
+
+    // Load and apply saved theme preference on DOMContentLoaded
+    var savedTheme = 'dark';
+    try {
+        savedTheme = localStorage.getItem('app-theme') || 'dark';
+    } catch (e) {
+        // Fallback theme setting in case storage is disallowed
+    }
+    changeTheme(savedTheme);
+
     var isElectron = !!window.electronAPI;
 
     if (isElectron) {
@@ -303,12 +450,10 @@ window.addEventListener('DOMContentLoaded', async () => {
             setOutputDir('Failed to load default directory');
         }
     } else {
-        // Web Browser / Python Server Mode: Hide custom titlebar button controls and drag handles
-        var controls = document.querySelector('.titlebar-controls');
-        var dragRegion = document.querySelector('.titlebar-drag-region');
-        
-        if (controls) controls.style.display = 'none';
-        if (dragRegion) dragRegion.style.display = 'none';
+        // Web Browser / Python Server Mode: Hide custom titlebar entirely and add browser mode class to body/html
+        var titlebar = document.getElementById('app-titlebar');
+        if (titlebar) titlebar.style.display = 'none';
+        document.documentElement.classList.add('browser-mode');
 
         // Fetch default downloads directory path from Python REST API
         try {

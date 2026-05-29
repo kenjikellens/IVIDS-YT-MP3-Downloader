@@ -9,19 +9,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="style.css">
-    <!-- Renderer JavaScript script -->
-    <script src="renderer.js" defer></script>
+    <!-- Custom Style Sheet with Cache-Buster version parameter -->
+    <link rel="stylesheet" href="style.css?v=1.1.0">
+    <!-- Main JavaScript script with Cache-Buster version parameter -->
+    <script src="script.js?v=1.1.0" defer></script>
 </head>
 <body>
-
-    <!-- Floating animated background blobs -->
-    <div class="bg-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
-    </div>
 
     <!-- Custom titlebar for frameless windows -->
     <div class="titlebar" id="app-titlebar">
@@ -55,75 +48,101 @@
     <main class="container" id="main-container">
         <!-- Main Application Header -->
         <header class="header">
-            <h1>IVIDS YT MP3 Downloader</h1>
+            <div class="header-main">
+                <h1>IVIDS YT MP3 Downloader</h1>
+                <button id="theme-btn" class="btn-theme-toggle" aria-label="Toggle Theme" title="Switch Theme">☀️</button>
+            </div>
             <p>Download entire playlists or single videos to high-quality audio files</p>
         </header>
 
-        <!-- Configuration Card Panel -->
-        <section class="card" id="settings-card">
-            <!-- URL Form Input Row -->
-            <div class="form-row">
-                <label for="url-input">YouTube URL</label>
-                <input type="text" id="url-input" placeholder="Paste playlist or video link here..." autocomplete="off">
-            </div>
-
-            <!-- Output Save Folder Selection Row -->
-            <div class="form-row">
-                <label>Save to</label>
-                <div class="dir-row">
-                    <div class="dir-path" id="dir-path">Loading...</div>
-                    <button class="btn-browse" id="btn-browse" onclick="browseDirectory()">Browse</button>
+        <!-- Responsive Dashboard Layout Wrapper: 2-row grid -->
+        <div class="app-layout">
+            <!-- Top Left: Configuration Settings Card -->
+            <section class="card config-panel" id="settings-card">
+                <!-- URL Form Input Row -->
+                <div class="form-row">
+                    <label for="url-input">YouTube URL</label>
+                    <input type="text" id="url-input" placeholder="Paste playlist or video link here..." autocomplete="off">
                 </div>
-            </div>
 
-            <!-- Advanced Configuration Toggler -->
-            <button class="advanced-toggle" id="advanced-toggle" onclick="toggleAdvanced()">⚙ Advanced Settings</button>
-
-            <!-- Advanced Parameter Panel -->
-            <div class="advanced-panel" id="advanced-panel">
-                <div class="adv-group">
-                    <label for="format-select">Audio Format</label>
-                    <select id="format-select">
-                        <option value="mp3" selected>MP3</option>
-                        <option value="m4a">M4A</option>
-                        <option value="wav">WAV</option>
-                    </select>
-                </div>
-                <div class="adv-group">
-                    <label for="quality-select">Audio Quality</label>
-                    <select id="quality-select">
-                        <option value="320k">320 kbps</option>
-                        <option value="192k" selected>192 kbps</option>
-                        <option value="128k">128 kbps</option>
-                    </select>
-                </div>
-                <div class="adv-group">
-                    <label>Playlist Range</label>
-                    <div class="range-inputs">
-                        <input type="text" id="start-range" placeholder="From" aria-label="Playlist Start Range">
-                        <input type="text" id="end-range" placeholder="To" aria-label="Playlist End Range">
+                <!-- Output Save Folder Selection Row -->
+                <div class="form-row">
+                    <label>Save to</label>
+                    <div class="dir-row">
+                        <div class="dir-path" id="dir-path">Loading...</div>
+                        <button class="btn-browse" id="btn-browse">Browse</button>
                     </div>
                 </div>
-            </div>
 
-            <!-- Form Submissions Action Rows -->
-            <div class="actions">
-                <button class="btn-download" id="btn-download" onclick="startDownload()">Start Download</button>
-                <button class="btn-cancel" id="btn-cancel" onclick="cancelDownload()" disabled>Cancel</button>
-            </div>
-        </section>
+                <!-- Advanced Configuration Toggler -->
+                <button class="advanced-toggle" id="advanced-toggle">
+                    ⚙ Advanced Settings <span class="chevron" id="advanced-chevron">▼</span>
+                </button>
 
-        <!-- Progress and Output Logging Section -->
-        <section class="progress-section" id="progress-section">
-            <div class="progress-header">
-                <span class="status-text" id="status-text">Status: Idle</span>
-                <span class="track-text" id="track-text"></span>
-            </div>
-            <div class="progress-bar-container">
-                <div class="progress-bar-fill" id="progress-fill"></div>
-            </div>
-            <div class="console" id="console" role="log"></div>
-        </section>
+                <!-- Advanced Parameter Panel -->
+                <div class="advanced-panel" id="advanced-panel">
+                    <div class="adv-group">
+                        <label for="format-select">Audio Format</label>
+                        <select id="format-select">
+                            <option value="mp3" selected>MP3</option>
+                            <option value="m4a">M4A</option>
+                            <option value="wav">WAV</option>
+                        </select>
+                    </div>
+                    <div class="adv-group">
+                        <label for="quality-select">Audio Quality</label>
+                        <select id="quality-select">
+                            <option value="320k">320 kbps</option>
+                            <option value="192k" selected>192 kbps</option>
+                            <option value="128k">128 kbps</option>
+                        </select>
+                    </div>
+                    <div class="adv-group">
+                        <label>Playlist Range</label>
+                        <div class="range-inputs">
+                            <input type="text" id="start-range" placeholder="From" aria-label="Playlist Start Range">
+                            <input type="text" id="end-range" placeholder="To" aria-label="Playlist End Range">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Submissions Action Rows -->
+                <div class="actions">
+                    <button class="btn-download" id="btn-download">Start Download</button>
+                    <button class="btn-cancel" id="btn-cancel" disabled>Cancel</button>
+                </div>
+            </section>
+
+            <!-- Top Right: YouTube Video/Playlist Preview Card -->
+            <section class="card preview-panel" id="preview-panel">
+                <div class="preview-header">
+                    <span class="preview-title">Preview</span>
+                </div>
+                <!-- Empty state shown when no valid URL is entered -->
+                <div class="preview-empty" id="preview-empty">
+                    <svg class="preview-empty-icon" viewBox="0 0 24 24" width="48" height="48">
+                        <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9.5 16.5l7-4.5-7-4.5v9z"/>
+                    </svg>
+                    <p>Paste a YouTube URL to see a preview</p>
+                </div>
+                <!-- Responsive YouTube embed container -->
+                <div class="preview-embed" id="preview-embed" style="display:none;">
+                    <iframe id="preview-iframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </section>
+
+            <!-- Bottom Row: CLI Console Output (full width) -->
+            <section class="card output-panel" id="progress-section">
+                <div class="progress-header">
+                    <span class="status-text" id="status-text">Status: Idle</span>
+                    <span class="track-text" id="track-text"></span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progress-fill"></div>
+                </div>
+                <div class="console" id="console" role="log"></div>
+            </section>
+        </div>
     </main>
 
 </body>
