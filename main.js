@@ -22,13 +22,13 @@ let activeManager = null;
  */
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 800,
-        height: 720,
-        minWidth: 600,
-        minHeight: 500,
+        width: 1100,
+        height: 800,
+        minWidth: 780,
+        minHeight: 600,
         frame: false,                // Frameless window for custom titlebar
         transparent: false,
-        backgroundColor: '#0a0e1a',  // Match deep dark theme background
+        backgroundColor: '#0a0a0a',  // Match neutral dark theme background
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,  // Safe separation between Node and renderer context
@@ -64,6 +64,26 @@ ipcMain.handle('select-directory', async () => {
  */
 ipcMain.handle('get-default-dir', () => {
     return app.getPath('downloads');
+});
+
+/**
+ * Resolves yt-dlp dependencies and queries playlist or video metadata.
+ * 
+ * @param {string} url - YouTube link URL
+ * @returns {Promise<Array|Object>} Array of track details or error dict
+ */
+ipcMain.handle('fetch-metadata', async (event, url) => {
+    try {
+        const manager = new DownloadManager({ url, outputDir: '' }, {
+            onStatusChange: () => {},
+            onLog: () => {}
+        });
+        const ytDlpPath = await manager.resolveYtDlp();
+        const tracks = await manager.fetchTrackList(ytDlpPath);
+        return { tracks };
+    } catch (err) {
+        return { error: err.message };
+    }
 });
 
 /**

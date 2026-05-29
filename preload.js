@@ -35,6 +35,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
      */
     cancelDownload: () => ipcRenderer.send('cancel-download'),
 
+    /**
+     * Queries playlist/video metadata via Electron IPC.
+     * @param {string} url - YouTube URL
+     * @returns {Promise<Array>} List of video metadata details
+     */
+    fetchMetadata: (url) => ipcRenderer.invoke('fetch-metadata', url),
+
     // ---- Window Controls (custom titlebar hooks) ----
 
     /** Minimizes the application window */

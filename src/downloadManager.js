@@ -29,11 +29,11 @@ class DownloadManager {
     constructor(options, listener) {
         this.url = options.url;
         this.outputDir = options.outputDir;
-        self = this;
         this.format = options.format;
         this.quality = options.quality;
         this.startIdx = options.startIdx;
         this.endIdx = options.endIdx;
+        this.selectedIds = options.selectedIds || null;
         this.listener = listener;
 
         this.cancelled = false;
@@ -78,16 +78,18 @@ class DownloadManager {
             const totalTracks = tracks.length;
             this.listener.onLog(`Found ${totalTracks} video(s) in source link.`);
 
-            // Slice downloads range
-            const actualStart = Math.max(1, this.startIdx);
-            const actualEnd = (this.endIdx === -1 || this.endIdx > totalTracks)
-                ? totalTracks : this.endIdx;
-
-            if (actualStart > totalTracks) {
-                throw new Error(`Start range index (${actualStart}) exceeds playlist size (${totalTracks}).`);
+            let downloadQueue = [];
+            if (this.selectedIds && this.selectedIds.length > 0) {
+                downloadQueue = tracks.filter(t => this.selectedIds.includes(t.id));
+            } else {
+                const actualStart = Math.max(1, this.startIdx);
+                const actualEnd = (this.endIdx === -1 || this.endIdx > totalTracks)
+                    ? totalTracks : this.endIdx;
+                if (actualStart > totalTracks) {
+                    throw new Error(`Start range index (${actualStart}) exceeds playlist size (${totalTracks}).`);
+                }
+                downloadQueue = tracks.slice(actualStart - 1, actualEnd);
             }
-
-            const downloadQueue = tracks.slice(actualStart - 1, actualEnd);
             const queueSize = downloadQueue.length;
             this.listener.onLog(`Starting download queue of ${queueSize} tracks.`);
 
@@ -116,7 +118,7 @@ class DownloadManager {
             } else if (completed === 0 && queueSize > 0) {
                 this.listener.onComplete(false, 'All items in range failed to download.');
             } else {
-                self.listener.onComplete(true, null);
+                this.listener.onComplete(true, null);
             }
 
         } catch (err) {
@@ -232,7 +234,12 @@ class DownloadManager {
                     try {
                         const json = JSON.parse(line);
                         if (json.id && json.title) {
-                            tracks.push({ title: json.title, id: json.id });
+                            tracks.push({
+                                title: json.title,
+                                id: json.id,
+                                duration: json.duration || null,
+                                channel: json.channel || json.uploader || 'Unknown Channel'
+                            });
                         }
                     } catch (e) {}
                 }
@@ -246,7 +253,12 @@ class DownloadManager {
                     try {
                         const json = JSON.parse(buffer);
                         if (json.id && json.title) {
-                            tracks.push({ title: json.title, id: json.id });
+                            tracks.push({
+                                title: json.title,
+                                id: json.id,
+                                duration: json.duration || null,
+                                channel: json.channel || json.uploader || 'Unknown Channel'
+                            });
                         }
                     } catch (e) {}
                 }
@@ -281,7 +293,12 @@ class DownloadManager {
                 try {
                     const json = JSON.parse(output);
                     if (json.id && json.title) {
-                        tracks.push({ title: json.title, id: json.id });
+                        tracks.push({
+                            title: json.title,
+                            id: json.id,
+                            duration: json.duration || null,
+                            channel: json.channel || json.uploader || 'Unknown Channel'
+                        });
                     }
                 } catch (e) {}
                 resolve(tracks);

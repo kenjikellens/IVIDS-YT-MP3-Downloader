@@ -1,17 +1,23 @@
 /**
- * ui/renderer.js — Unified Frontend Application Controller
+ * ui/script.js — Unified Frontend Application Controller
  * 
- * Dynamically detects the runtime environment (Electron vs. Web Browser)
- * and directs folder browse triggers, download starts, cancels, and real-time
- * progress/log updates to either Electron secure IPC APIs or standard Python REST/SSE routes.
+ * Manages navigation tabs, advanced panels, automatic and manual metadata card previews,
+ * download triggers, local storage download history tracking, and responsive mobile sidebar togglers.
+ * Integrates Electron secure ContextBridge IPC and Python fallback HTTP Server REST/SSE routes.
  */
 
-/** @type {EventSource|null} Reference to the active SSE download stream (Browser Mode only) */
+/** @type {EventSource|null} Reference to active SSE download stream (Browser Mode fallback only) */
 var activeEventSource = null;
 
+/** @type {Array<Object>} Currently loaded tracks metadata array */
+var loadedTracks = [];
+
+/** @type {number|null} Debounce timer handle for URL input auto-load triggering */
+var autoLoadDebounceTimer = null;
+
 /**
- * Toggles the visibility of the advanced settings panel in the UI.
- * Toggles the 'visible' class on the settings panel container and updates the chevron.
+ * Toggles the advanced settings dropdown panel visibility.
+ * Toggles 'visible' utility class on the panel container and flips the chevron.
  */
 function toggleAdvanced() {
     var panel = document.getElementById('advanced-panel');
@@ -25,10 +31,63 @@ function toggleAdvanced() {
 }
 
 /**
- * Changes the active user interface theme.
- * Updates the global document root class and saves the preference to local storage.
+ * Toggles the navigation tabs between pages.
+ * Handles home download settings card layouts and download history lists toggling.
  * 
- * @param {string} theme - The target theme name ('light' or 'dark')
+ * @param {string} targetPageId - The ID of the page section ('page-home' or 'page-downloads')
+ */
+function navigateTo(targetPageId) {
+    document.querySelectorAll('.page').forEach(function(page) {
+        page.classList.remove('active');
+    });
+    document.querySelectorAll('.nav-item').forEach(function(item) {
+        item.classList.remove('active');
+    });
+
+    var activePage = document.getElementById(targetPageId);
+    if (activePage) {
+        activePage.classList.add('active');
+    }
+
+    if (targetPageId === 'page-home') {
+        document.getElementById('nav-home').classList.add('active');
+    } else if (targetPageId === 'page-downloads') {
+        document.getElementById('nav-downloads').classList.add('active');
+        renderDownloadHistory();
+    }
+    
+    closeSidebar();
+}
+
+/**
+ * Toggles the mobile navigation drawer menu drawer open/closed states.
+ */
+function toggleSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebar-overlay');
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('visible');
+    }
+}
+
+/**
+ * Closes the mobile navigation drawer sidebar and hides the overlay backdrop.
+ */
+function closeSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebar-overlay');
+    if (sidebar && overlay) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('visible');
+    }
+}
+
+/**
+ * Applies the selected color theme classes to the application HTML node.
+ * Stores the chosen theme preferences in the LocalStorage.
+ * 
+ * @param {string} theme - Theme name option ('dark' or 'light')
  */
 function changeTheme(theme) {
     var themeBtn = document.getElementById('theme-btn');
@@ -47,41 +106,36 @@ function changeTheme(theme) {
     }
     try {
         localStorage.setItem('app-theme', theme);
-    } catch (e) {
-        // Catch and ignore local storage write permissions errors in sandboxed browser runs
-    }
+    } catch (e) {}
 }
 
 /**
- * Toggles the active theme between light and dark modes.
- * Reads the current theme selection from storage and switches it.
+ * Flips the color theme class mapping settings.
  */
 function toggleTheme() {
     var currentTheme = 'dark';
     try {
         currentTheme = localStorage.getItem('app-theme') || 'dark';
-    } catch (e) {
-        // Fallback to default theme on storage read permission failure
-    }
+    } catch (e) {}
     var nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
     changeTheme(nextTheme);
 }
 
 /**
- * Updates the text label displaying the target save directory path.
+ * Configures the save location directory path label element.
  * 
- * @param {string} path - The absolute folder path
+ * @param {string} folderPath - Target OS directory location
  */
-function setOutputDir(path) {
+function setOutputDir(folderPath) {
     var dirElement = document.getElementById('dir-path');
     if (dirElement) {
-        dirElement.textContent = path;
+        dirElement.textContent = folderPath;
     }
 }
 
 /**
- * Handles directory choosing dialog triggering.
- * Routes to Electron native dialog API if in Electron, or Python filedialog API if in browser.
+ * Prompts native OS directory browser dialogs.
+ * Integrates Electron ContextBridge dialogue APIs or Python REST filedialog dialog triggers.
  */
 async function browseDirectory() {
     try {
@@ -89,10 +143,8 @@ async function browseDirectory() {
         var folderPath = null;
 
         if (isElectron) {
-            // Electron context bridge dialog call
             folderPath = await window.electronAPI.selectDirectory();
         } else {
-            // Fetch GET request to Python tk.filedialog wrapper
             var response = await fetch('/api/select-directory');
             if (!response.ok) throw new Error('Network error selecting folder');
             var data = await response.json();
@@ -109,8 +161,177 @@ async function browseDirectory() {
 }
 
 /**
- * Initiates the download task.
- * Reads form data, disables UI controls, and triggers the download runner.
+ * Parses track durations in seconds into formatted MM:SS length values.
+ * 
+ * @param {number|null} durationSeconds - Video duration count in seconds
+ * @returns {string} Formatted length string
+ */
+function formatDuration(durationSeconds) {
+    if (!durationSeconds || isNaN(durationSeconds)) return 'Unknown';
+    var minutes = Math.floor(durationSeconds / 60);
+    var seconds = Math.floor(durationSeconds % 60);
+    if (seconds < 10) seconds = '0' + seconds;
+    return minutes + ':' + seconds;
+}
+
+/**
+ * Triggers backend flat-playlist queries to parse metadata.
+ * Populates single or playlist track preview cards list with checkboxes.
+ */
+async function loadMetadata() {
+    var urlInput = document.getElementById('url-input');
+    var url = urlInput ? urlInput.value.trim() : '';
+    if (!url) return;
+
+    var btnLoad = document.getElementById('btn-load-info');
+    if (btnLoad) {
+        btnLoad.disabled = true;
+        btnLoad.textContent = 'Loading...';
+    }
+
+    addLog('Fetching metadata details for URL...');
+
+    // Switch previews panel states to empty/loading placeholder
+    showPreviewState('empty');
+    document.getElementById('state-empty').innerHTML = '<p>Loading tracks metadata...</p>';
+
+    try {
+        var isElectron = !!window.electronAPI;
+        var tracks = [];
+
+        if (isElectron) {
+            var res = await window.electronAPI.fetchMetadata(url);
+            if (res.error) throw new Error(res.error);
+            tracks = res.tracks || [];
+        } else {
+            var res = await fetch('/api/fetch-metadata?url=' + encodeURIComponent(url));
+            if (!res.ok) throw new Error('Network error loading metadata');
+            var data = await res.json();
+            if (data.error) throw new Error(data.error);
+            tracks = data.tracks || [];
+        }
+
+        loadedTracks = tracks;
+        renderPreview(tracks);
+    } catch (err) {
+        addLog('[Error] Failed loading metadata: ' + err.message);
+        document.getElementById('state-empty').innerHTML = 
+            '<svg class="preview-empty-icon" viewBox="0 0 24 24" width="44" height="44">' +
+                '<path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9.5 16.5l7-4.5-7-4.5v9z"/>' +
+            '</svg>' +
+            '<p style="color:var(--accent-red);">[Error] ' + err.message + '</p>';
+    } finally {
+        if (btnLoad) {
+            btnLoad.disabled = false;
+            btnLoad.textContent = 'Load Info';
+        }
+    }
+}
+
+/**
+ * Toggles preview state displays (empty, single, playlist) inside the right panel.
+ * 
+ * @param {string} state - Preview state selection ('empty' | 'single' | 'playlist')
+ */
+function showPreviewState(state) {
+    document.getElementById('state-empty').style.display = 'none';
+    document.getElementById('state-single').style.display = 'none';
+    document.getElementById('state-playlist').style.display = 'none';
+
+    if (state === 'empty') {
+        document.getElementById('state-empty').style.display = 'flex';
+    } else if (state === 'single') {
+        document.getElementById('state-single').style.display = 'flex';
+    } else if (state === 'playlist') {
+        document.getElementById('state-playlist').style.display = 'flex';
+    }
+}
+
+/**
+ * Loops and renders track card elements inside the preview panel container.
+ * Renders a single metadata card if length is 1, or checklist arrays if greater.
+ * 
+ * @param {Array<Object>} tracks - Array of track metadata objects
+ */
+function renderPreview(tracks) {
+    if (!tracks || tracks.length === 0) {
+        showPreviewState('empty');
+        document.getElementById('state-empty').innerHTML = 
+            '<svg class="preview-empty-icon" viewBox="0 0 24 24" width="44" height="44">' +
+                '<path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9.5 16.5l7-4.5-7-4.5v9z"/>' +
+            '</svg>' +
+            '<p>No tracks or video information found.</p>';
+        return;
+    }
+
+    if (tracks.length === 1) {
+        // Render Single Video Card Preview
+        showPreviewState('single');
+        var track = tracks[0];
+        var container = document.getElementById('single-video-card');
+        
+        var thumbUrl = 'https://img.youtube.com/vi/' + track.id + '/mqdefault.jpg';
+        var durationText = track.duration ? formatDuration(track.duration) : '';
+
+        var initials = track.channel ? track.channel.substring(0, 2).toUpperCase() : 'YT';
+
+        container.innerHTML = 
+            '<div class="video-thumb">' +
+                '<img src="' + thumbUrl + '" alt="Thumbnail" onerror="this.src=\'\'">' +
+                (durationText ? '<span class="video-duration">' + durationText + '</span>' : '') +
+            '</div>' +
+            '<div class="video-info">' +
+                '<div class="video-info-title">' + track.title + '</div>' +
+                '<div class="video-info-channel">' +
+                    '<div class="channel-avatar">' + initials + '</div>' +
+                    '<span>' + track.channel + '</span>' +
+                '</div>' +
+                '<div style="font-size:11px; color:var(--text-muted); margin-top: 4px;">Length: ' + durationText + '</div>' +
+            '</div>';
+    } else {
+        // Render Playlist Cards Checklist
+        showPreviewState('playlist');
+        document.getElementById('track-count-text').textContent = tracks.length + ' tracks found';
+
+        var list = document.getElementById('track-list');
+        list.innerHTML = '';
+
+        tracks.forEach(function(t, idx) {
+            var label = document.createElement('label');
+            label.className = 'track-item';
+
+            var thumbUrl = 'https://img.youtube.com/vi/' + t.id + '/mqdefault.jpg';
+            var durationText = t.duration ? formatDuration(t.duration) : 'Unknown';
+
+            label.innerHTML = 
+                '<input type="checkbox" class="track-cb" checked data-id="' + t.id + '">' +
+                '<div class="track-thumb">' +
+                    '<img src="' + thumbUrl + '" alt="" onerror="this.src=\'\'">' +
+                '</div>' +
+                '<div class="track-info">' +
+                    '<div class="track-title">' + (idx + 1) + '. ' + t.title + '</div>' +
+                    '<div class="track-artist">' + t.channel + '</div>' +
+                    '<div class="track-length">Length: ' + durationText + '</div>' +
+                '</div>';
+
+            list.appendChild(label);
+        });
+    }
+}
+
+/**
+ * Toggles all selection checkboxes in the playlist checklist panel.
+ * 
+ * @param {boolean} checked - True to select all checkboxes, false to clear
+ */
+function toggleSelectAll(checked) {
+    document.querySelectorAll('.track-cb').forEach(function(cb) {
+        cb.checked = checked;
+    });
+}
+
+/**
+ * Validates the inputs and triggers sequential background download queue schedules.
  */
 function startDownload() {
     var urlInput = document.getElementById('url-input');
@@ -120,35 +341,38 @@ function startDownload() {
         return;
     }
 
-    var formatSelect = document.getElementById('format-select');
-    var qualitySelect = document.getElementById('quality-select');
-    var startRangeInput = document.getElementById('start-range');
-    var endRangeInput = document.getElementById('end-range');
-
-    var format = formatSelect ? formatSelect.value : 'mp3';
-    var quality = qualitySelect ? qualitySelect.value : '192k';
-    
-    var startVal = startRangeInput ? startRangeInput.value.trim() : '';
-    var endVal = endRangeInput ? endRangeInput.value.trim() : '';
-    
-    var startIdx = startVal ? parseInt(startVal) : 1;
-    var endIdx = endVal ? parseInt(endVal) : -1;
-    
-    if (isNaN(startIdx)) startIdx = 1;
-    if (isNaN(endIdx)) endIdx = -1;
-
     var dirElement = document.getElementById('dir-path');
     var outputDir = dirElement ? dirElement.textContent.trim() : '';
 
-    // Lock visual components during download execution
-    var downloadBtn = document.getElementById('btn-download');
-    var cancelBtn = document.getElementById('btn-cancel');
+    var formatSelect = document.getElementById('format-select');
+    var qualitySelect = document.getElementById('quality-select');
+    var format = formatSelect ? formatSelect.value : 'mp3';
+    var quality = qualitySelect ? qualitySelect.value : '192k';
+
+    // Collect Selected track IDs
+    var selectedIds = [];
+    document.querySelectorAll('.track-cb').forEach(function(cb) {
+        if (cb.checked) {
+            var tid = cb.getAttribute('data-id');
+            if (tid) selectedIds.push(tid);
+        }
+    });
+
+    // If playlist items are loaded, require at least one checkbox selection
+    if (loadedTracks.length > 1 && selectedIds.length === 0) {
+        addLog('[Warning] No playlist tracks are selected for download.');
+        return;
+    }
+
+    // Toggle active state buttons
+    var btnDownload = document.getElementById('btn-download');
+    var btnCancel = document.getElementById('btn-cancel');
     var consoleElement = document.getElementById('console');
 
-    if (downloadBtn) downloadBtn.disabled = true;
-    if (cancelBtn) cancelBtn.disabled = false;
+    if (btnDownload) btnDownload.disabled = true;
+    if (btnCancel) btnCancel.disabled = false;
     if (consoleElement) consoleElement.innerHTML = '';
-    
+
     setProgress(0);
     addLog('Initializing download job...');
 
@@ -157,21 +381,31 @@ function startDownload() {
         outputDir: outputDir,
         format: format,
         quality: quality,
-        startIdx: startIdx,
-        endIdx: endIdx
+        startIdx: 1,
+        endIdx: -1,
+        selectedIds: selectedIds
     };
 
     var isElectron = !!window.electronAPI;
     if (isElectron) {
-        // Electron IPC request
         window.electronAPI.startDownload(options);
     } else {
-        // SSE EventSource request to Python HTTP server
-        var queryParams = new URLSearchParams(options);
+        // SSE EventSource query formatting
+        var queryParams = new URLSearchParams({
+            url: options.url,
+            outputDir: options.outputDir,
+            format: options.format,
+            quality: options.quality,
+            startIdx: 1,
+            endIdx: -1
+        });
+        if (selectedIds.length > 0) {
+            queryParams.append('selectedIds', selectedIds.join(','));
+        }
+
         var source = new EventSource('/api/download?' + queryParams.toString());
         activeEventSource = source;
 
-        // Listen for live standard output log events
         source.addEventListener('log', function(e) {
             try {
                 var msg = JSON.parse(e.data);
@@ -179,7 +413,6 @@ function startDownload() {
             } catch (err) {}
         });
 
-        // Listen for overall progress updates
         source.addEventListener('progress', function(e) {
             try {
                 var percent = JSON.parse(e.data);
@@ -187,7 +420,6 @@ function startDownload() {
             } catch (err) {}
         });
 
-        // Listen for status descriptions
         source.addEventListener('status', function(e) {
             try {
                 var data = JSON.parse(e.data);
@@ -195,7 +427,6 @@ function startDownload() {
             } catch (err) {}
         });
 
-        // Listen for execution completion
         source.addEventListener('complete', function(e) {
             try {
                 var data = JSON.parse(e.data);
@@ -205,7 +436,6 @@ function startDownload() {
             activeEventSource = null;
         });
 
-        // Handle error terminations
         source.addEventListener('error', function(e) {
             onComplete(false, 'Connection lost or stream terminated.');
             source.close();
@@ -215,18 +445,14 @@ function startDownload() {
 }
 
 /**
- * Signals backend processes to cancel active download jobs.
- * Clears EventSource connections in browser mode, or posts cancel IPC in Electron.
+ * Signals backend download managers to cancel active execution streams.
  */
 async function cancelDownload() {
     addLog('Sending cancel request...');
-    
     var isElectron = !!window.electronAPI;
     if (isElectron) {
-        // Send cancel event to Electron main process
         window.electronAPI.cancelDownload();
     } else {
-        // Close EventSource stream and fetch cancel endpoint on Python server
         if (activeEventSource) {
             activeEventSource.close();
             activeEventSource = null;
@@ -238,9 +464,9 @@ async function cancelDownload() {
 }
 
 /**
- * Updates the visual progress fill bar width.
+ * Updates visual progress percentage fill-bar width indicators.
  * 
- * @param {number} percent - Completion percentage integer (0 - 100)
+ * @param {number} percent - Completion percent value (0 - 100)
  */
 function setProgress(percent) {
     var fill = document.getElementById('progress-fill');
@@ -250,184 +476,236 @@ function setProgress(percent) {
 }
 
 /**
- * Sets status message values on the headers.
+ * Updates the text descriptions inside progress headers.
  * 
- * @param {string} status - Diagnostic operation step text
- * @param {string} track - Active video/audio track title name
+ * @param {string} status - Description indicating active process steps
+ * @param {string} track - Active filename/track heading description
  */
 function setStatus(status, track) {
     var statusText = document.getElementById('status-text');
     var trackText = document.getElementById('track-text');
-    
     if (statusText) statusText.textContent = 'Status: ' + status;
     if (trackText) trackText.textContent = track;
 }
 
 /**
- * Restores visual control buttons and prints final results to log viewers.
+ * Restores visual download buttons and logs completions.
+ * Adds downloads to history storage arrays on successful completions.
  * 
- * @param {boolean} success - True if download queue completed successfully
- * @param {string|null} errorMsg - Optional summary details if success is false
+ * @param {boolean} success - True if queue resolved without fatal crashes
+ * @param {string|null} errorMsg - Summary error logs
  */
 function onComplete(success, errorMsg) {
-    var downloadBtn = document.getElementById('btn-download');
-    var cancelBtn = document.getElementById('btn-cancel');
+    var btnDownload = document.getElementById('btn-download');
+    var btnCancel = document.getElementById('btn-cancel');
 
-    if (downloadBtn) downloadBtn.disabled = false;
-    if (cancelBtn) cancelBtn.disabled = true;
+    if (btnDownload) btnDownload.disabled = false;
+    if (btnCancel) btnCancel.disabled = true;
+
+    // Track active target details to save
+    var targetTitle = 'YouTube Download';
+    var qualitySelect = document.getElementById('quality-select');
+    var formatSelect = document.getElementById('format-select');
+    var q = qualitySelect ? qualitySelect.value : '192k';
+    var f = formatSelect ? formatSelect.value : 'mp3';
+
+    if (loadedTracks.length === 1) {
+        targetTitle = loadedTracks[0].title;
+    } else if (loadedTracks.length > 1) {
+        var selectedCount = 0;
+        document.querySelectorAll('.track-cb').forEach(function(cb) {
+            if (cb.checked) selectedCount++;
+        });
+        targetTitle = 'Playlist Queue (' + selectedCount + ' tracks)';
+    }
 
     if (success) {
         setProgress(100);
         setStatus('Completed', 'Finished!');
         addLog('[Success] All tasks finished successfully!');
+        
+        saveDownloadRecord(targetTitle, f.toUpperCase() + ' • ' + q.replace('k', ' kbps'), true);
     } else {
         setStatus('Failed', '');
         if (errorMsg) {
             addLog('[Error] ' + errorMsg);
+            saveDownloadRecord(targetTitle, f.toUpperCase() + ' • ' + q.replace('k', ' kbps') + ' • ' + errorMsg, false);
         } else {
             addLog('[Warning] Job was cancelled.');
+            saveDownloadRecord(targetTitle, f.toUpperCase() + ' • ' + q.replace('k', ' kbps') + ' • Cancelled', false);
         }
     }
 }
 
 /**
- * Prints tagged, color-coded strings to the scrollable terminal console log.
+ * Appends standard log lines inside the diagnostic output console box.
  * 
- * @param {string} msg - Standard log string
+ * @param {string} msg - Log string output
  */
 function addLog(msg) {
-    var el = document.createElement('div');
-    el.className = 'log-line';
-    
+    var div = document.createElement('div');
+    div.className = 'log-line';
+
     if (msg.indexOf('[Success]') !== -1) {
-        el.className += ' log-success';
+        div.className += ' log-success';
     } else if (msg.indexOf('[Error]') !== -1) {
-        el.className += ' log-error';
+        div.className += ' log-error';
     } else if (msg.indexOf('[Warning]') !== -1) {
-        el.className += ' log-warn';
+        div.className += ' log-warn';
     }
-    
-    el.textContent = msg;
-    
+
+    div.textContent = msg;
+
     var consoleContainer = document.getElementById('console');
     if (consoleContainer) {
-        consoleContainer.appendChild(el);
+        consoleContainer.appendChild(div);
         consoleContainer.scrollTop = consoleContainer.scrollHeight;
     }
 }
 
-// ===== YouTube Preview Helpers =====
-
-/** @type {number|null} Debounce timer handle for URL input preview updates */
-var previewDebounceTimer = null;
+// ===== LOCALSTORAGE HISTORY TRACKING =====
 
 /**
- * Extracts a YouTube video ID or playlist ID from a given URL string.
- * Returns an object with `type` ('video' or 'playlist') and the corresponding `id`.
- *
- * @param {string} url - The YouTube URL to parse
- * @returns {{ type: string, id: string } | null} Parsed result or null if no match
+ * Commits a completed download record into localStorage arrays.
+ * 
+ * @param {string} title - Target song or playlist identifier name
+ * @param {string} meta - Quality, format, and diagnostic descriptions
+ * @param {boolean} success - Complete success flag
  */
-function extractYouTubeId(url) {
-    if (!url) return null;
+function saveDownloadRecord(title, meta, success) {
+    try {
+        var list = JSON.parse(localStorage.getItem('dl-history') || '[]');
+        var date = new Date();
+        var dateString = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        list.unshift({
+            title: title,
+            meta: meta + ' • ' + dateString,
+            success: success
+        });
 
-    // Match playlist URLs (list= parameter)
-    var playlistMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
-
-    // Match standard video URLs (watch?v=, youtu.be/, embed/, shorts/)
-    var videoMatch = url.match(
-        /(?:youtube\.com\/(?:watch\?.*v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-    );
-
-    // Prefer playlist embed if a list param is present
-    if (playlistMatch) {
-        return { type: 'playlist', id: playlistMatch[1] };
-    }
-    if (videoMatch) {
-        return { type: 'video', id: videoMatch[1] };
-    }
-    return null;
+        // Limit local history cache sizes to last 50 entries
+        if (list.length > 50) list.pop();
+        localStorage.setItem('dl-history', JSON.stringify(list));
+    } catch (e) {}
 }
 
 /**
- * Updates the preview panel based on the current URL input value.
- * Shows a YouTube embed iframe for valid URLs, or the empty state placeholder otherwise.
+ * Reads local storage history list and renders entries inside the downloads view panel.
  */
-function updatePreview() {
-    var urlInput = document.getElementById('url-input');
-    var emptyState = document.getElementById('preview-empty');
-    var embedContainer = document.getElementById('preview-embed');
-    var iframe = document.getElementById('preview-iframe');
-    if (!urlInput || !emptyState || !embedContainer || !iframe) return;
+function renderDownloadHistory() {
+    var emptyState = document.getElementById('downloads-empty-state');
+    var listContainer = document.getElementById('downloads-list-items');
+    if (!listContainer || !emptyState) return;
 
-    var parsed = extractYouTubeId(urlInput.value.trim());
+    var list = [];
+    try {
+        list = JSON.parse(localStorage.getItem('dl-history') || '[]');
+    } catch (e) {}
 
-    if (parsed) {
-        var embedSrc = '';
-        if (parsed.type === 'playlist') {
-            embedSrc = 'https://www.youtube.com/embed/videoseries?list=' + parsed.id;
-        } else {
-            embedSrc = 'https://www.youtube.com/embed/' + parsed.id;
-        }
+    listContainer.innerHTML = '';
 
-        // Only reload iframe if the source actually changed
-        if (iframe.src !== embedSrc) {
-            iframe.src = embedSrc;
-        }
-        emptyState.style.display = 'none';
-        embedContainer.style.display = '';
+    if (list.length === 0) {
+        emptyState.style.display = 'flex';
+        listContainer.style.display = 'none';
     } else {
-        iframe.src = '';
-        emptyState.style.display = '';
-        embedContainer.style.display = 'none';
+        emptyState.style.display = 'none';
+        listContainer.style.display = 'flex';
+
+        list.forEach(function(item) {
+            var div = document.createElement('div');
+            div.className = 'dl-item';
+
+            var svgIcon = '<svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>';
+            var badgeClass = item.success ? 'success' : 'failed';
+            var badgeText = item.success ? 'Done' : 'Failed';
+
+            div.innerHTML = 
+                '<div class="dl-icon">' + svgIcon + '</div>' +
+                '<div class="dl-info">' +
+                    '<div class="dl-title">' + item.title + '</div>' +
+                    '<div class="dl-meta">' + item.meta + '</div>' +
+                '</div>' +
+                '<span class="dl-badge ' + badgeClass + '">' + badgeText + '</span>';
+
+            listContainer.appendChild(div);
+        });
     }
 }
 
-// ===== Initial Registration and Setup =====
 /**
- * Setup hook running on DOM content loaded.
- * Reconciles the runtime environment (Electron vs browser), fetches directories, and applies themes.
+ * Flushes all downloaded elements in local storage history array cache.
  */
+function clearDownloadHistory() {
+    try {
+        localStorage.removeItem('dl-history');
+    } catch (e) {}
+    renderDownloadHistory();
+    addLog('Downloads history cleared.');
+}
+
+// ===== APPLICATION INITIAL SETUP =====
+
 window.addEventListener('DOMContentLoaded', async () => {
-    // Bind UI control action event listeners
+    // Bind General Action triggers
     var btnBrowse = document.getElementById('btn-browse');
     var advancedToggle = document.getElementById('advanced-toggle');
     var btnDownload = document.getElementById('btn-download');
     var btnCancel = document.getElementById('btn-cancel');
     var themeBtn = document.getElementById('theme-btn');
+    var hamburgerBtn = document.getElementById('hamburger-btn');
+    var sidebarOverlay = document.getElementById('sidebar-overlay');
+    var btnLoadInfo = document.getElementById('btn-load-info');
+
+    // Page navigation anchors
+    var navHome = document.getElementById('nav-home');
+    var navDownloads = document.getElementById('nav-downloads');
+    var btnClearHistory = document.getElementById('btn-clear-history');
+
+    // Checklist toggles
+    var btnSelectAll = document.getElementById('btn-select-all');
+    var btnDeselectAll = document.getElementById('btn-deselect-all');
 
     if (btnBrowse) btnBrowse.addEventListener('click', browseDirectory);
     if (advancedToggle) advancedToggle.addEventListener('click', toggleAdvanced);
     if (btnDownload) btnDownload.addEventListener('click', startDownload);
     if (btnCancel) btnCancel.addEventListener('click', cancelDownload);
     if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+    if (btnLoadInfo) btnLoadInfo.addEventListener('click', loadMetadata);
+    if (btnClearHistory) btnClearHistory.addEventListener('click', clearDownloadHistory);
 
-    // Bind URL input listener with debounce to update preview panel
+    // Sidebar selectors
+    if (hamburgerBtn) hamburgerBtn.addEventListener('click', toggleSidebar);
+    if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+    if (navHome) navHome.addEventListener('click', () => navigateTo('page-home'));
+    if (navDownloads) navDownloads.addEventListener('click', () => navigateTo('page-downloads'));
+
+    // Checklist buttons selection triggers
+    if (btnSelectAll) btnSelectAll.addEventListener('click', () => toggleSelectAll(true));
+    if (btnDeselectAll) btnDeselectAll.addEventListener('click', () => toggleSelectAll(false));
+
+    // Input changes triggers auto metadata loads
     var urlInput = document.getElementById('url-input');
     if (urlInput) {
-        urlInput.addEventListener('input', function () {
-            clearTimeout(previewDebounceTimer);
-            previewDebounceTimer = setTimeout(updatePreview, 400);
+        urlInput.addEventListener('input', function() {
+            clearTimeout(autoLoadDebounceTimer);
+            autoLoadDebounceTimer = setTimeout(loadMetadata, 500);
         });
-        // Also update on paste immediately
-        urlInput.addEventListener('paste', function () {
-            setTimeout(updatePreview, 50);
+        urlInput.addEventListener('paste', function() {
+            setTimeout(loadMetadata, 50);
         });
     }
 
-    // Load and apply saved theme preference on DOMContentLoaded
+    // Load initial theme preference
     var savedTheme = 'dark';
     try {
         savedTheme = localStorage.getItem('app-theme') || 'dark';
-    } catch (e) {
-        // Fallback theme setting in case storage is disallowed
-    }
+    } catch (e) {}
     changeTheme(savedTheme);
 
     var isElectron = !!window.electronAPI;
-
     if (isElectron) {
-        // 1. Register titlebar window control click actions
+        // Register titlebar buttons handlers
         var minBtn = document.getElementById('btn-minimize');
         var maxBtn = document.getElementById('btn-maximize');
         var closeBtn = document.getElementById('btn-close');
@@ -436,36 +714,33 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (maxBtn) maxBtn.addEventListener('click', () => window.electronAPI.windowMaximize());
         if (closeBtn) closeBtn.addEventListener('click', () => window.electronAPI.windowClose());
 
-        // 2. Attach callbacks for Electron main process backend events
+        // Register main process callback receivers
         window.electronAPI.onLog((msg) => addLog(msg));
         window.electronAPI.onProgress((percent) => setProgress(percent));
         window.electronAPI.onStatus((data) => setStatus(data.status, data.track));
         window.electronAPI.onComplete((data) => onComplete(data.success, data.errorMsg));
 
-        // 3. Fetch default downloads directory path from Electron
+        // Get default folder path
         try {
             var defaultDir = await window.electronAPI.getDefaultDir();
             setOutputDir(defaultDir);
-        } catch (err) {
-            setOutputDir('Failed to load default directory');
+        } catch (e) {
+            setOutputDir('C:\\Downloads');
         }
     } else {
-        // Web Browser / Python Server Mode: Hide custom titlebar entirely and add browser mode class to body/html
+        // Browser Mode fallback overrides
         var titlebar = document.getElementById('app-titlebar');
         if (titlebar) titlebar.style.display = 'none';
         document.documentElement.classList.add('browser-mode');
 
-        // Fetch default downloads directory path from Python REST API
         try {
-            var response = await fetch('/api/get-default-dir');
-            if (response.ok) {
-                var data = await response.json();
-                if (data.path) {
-                    setOutputDir(data.path);
-                }
+            var res = await fetch('/api/get-default-dir');
+            if (res.ok) {
+                var data = await res.json();
+                if (data.path) setOutputDir(data.path);
             }
-        } catch (err) {
-            setOutputDir('Failed to load default directory');
+        } catch (e) {
+            setOutputDir('/Downloads');
         }
     }
 });

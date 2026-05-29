@@ -1,58 +1,100 @@
 /* ===== Core Design System Variables ===== */
 :root {
-    --bg-app: #09090b;
-    --bg-card: #18181b;
-    --bg-input: #09090b;
-    --border-default: #27272a;
-    --border-focus: #2563eb;
-    --text-primary: #f4f4f5;
-    --text-secondary: #a1a1aa;
-    --text-muted: #71717a;
-    --accent-blue: #2563eb;
-    --accent-blue-hover: #1d4ed8;
-    --accent-blue-active: #1e40af;
-    --accent-red: #ef4444;
-    --accent-red-hover: #dc2626;
-    --accent-red-bg: rgba(239, 68, 68, 0.1);
-    --accent-green: #22c55e;
-    --bg-console: #09090b;
-    --border-console: #27272a;
-    --bg-button-secondary: #27272a;
-    --bg-button-secondary-hover: #3f3f46;
+    /* Backgrounds */
+    --bg-app: #09090b;             /* Deep slate-950 background */
+    --bg-card: #18181b;            /* Sleek slate-900 card background */
+    --bg-input: #27272a;           /* Input field background (slate-800) */
+    --bg-sidebar: #09090b;         /* Sidebar matching app background */
+    
+    /* Borders */
+    --border-default: #27272a;     /* Defined border (slate-800) */
+    --border-hover: #3f3f46;       /* Focus/hover border (slate-700) */
+    --border-focus: #ffffff;       /* Pure white focus highlight */
+    
+    /* Text colors */
+    --text-primary: #f4f4f5;       /* Crisp near-white main text (zinc-100) */
+    --text-secondary: #d4d4d8;     /* Highly readable secondary text (zinc-300) */
+    --text-muted: #a1a1aa;         /* Visible muted text (zinc-400) */
+    
+    /* Nav & Hover states */
+    --bg-nav-hover: rgba(255, 255, 255, 0.04);  /* Subtle nav hover */
+    --bg-nav-active: rgba(255, 255, 255, 0.08); /* Visible nav active block */
+    --bg-track-hover: rgba(255, 255, 255, 0.02); /* Track card hover background */
+    
+    /* Accents */
+    --accent-blue: #ffffff;        /* White primary accent */
+    --accent-blue-hover: #e4e4e7;  /* Hover state for primary accent */
+    --accent-red: #ef4444;         /* Error/Warning red */
+    --accent-red-bg: rgba(239, 68, 68, 0.15); /* Red warning block background */
+    --accent-green: #22c55e;       /* Success green */
+    
+    /* Buttons */
+    --bg-button-secondary: #27272a;       /* Secondary button background */
+    --bg-button-secondary-hover: #3f3f46; /* Hover state secondary button */
+    
+    /* Dedicated Console theme */
+    --bg-console: #09090b;         /* Jet black console background */
+    --text-console: #f4f4f5;       /* Crisp text inside console */
+    --text-log-success: #4ade80;   /* Readable success color */
+    --text-log-warn: #fbbf24;      /* Readable warning yellow */
+    --text-log-error: #f87171;     /* Readable error red */
+    
+    /* Dimensions & Fonts */
+    --sidebar-width: 220px;
+    --titlebar-height: 32px;
     --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
 }
 
-/* Light theme color variable overrides applied when class is added to html root */
+/* Light theme overrides applied when class is added to html root */
 .light-theme {
-    --bg-app: #f4f4f5;
-    --bg-card: #ffffff;
-    --bg-input: #f4f4f5;
-    --border-default: #e4e4e7;
-    --border-focus: #2563eb;
-    --text-primary: #18181b;
-    --text-secondary: #71717a;
-    --text-muted: #a1a1aa;
-    --accent-blue: #2563eb;
-    --accent-blue-hover: #1d4ed8;
-    --accent-blue-active: #1e40af;
-    --accent-red: #ef4444;
-    --accent-red-hover: #dc2626;
-    --accent-red-bg: rgba(239, 68, 68, 0.05);
-    --accent-green: #16a34a;
-    --bg-console: #f4f4f5;
-    --border-console: #e4e4e7;
-    --bg-button-secondary: #e4e4e7;
-    --bg-button-secondary-hover: #d4d4d8;
+    /* Backgrounds */
+    --bg-app: #f4f4f5;             /* Light gray background (zinc-100) */
+    --bg-card: #ffffff;            /* Pure white card background */
+    --bg-input: #ffffff;           /* Clean white input background */
+    --bg-sidebar: #f4f4f5;         /* Light sidebar matching background */
+    
+    /* Borders */
+    --border-default: #d4d4d8;     /* Visible light border (zinc-300) */
+    --border-hover: #a1a1aa;       /* Focus/hover border (zinc-400) */
+    --border-focus: #09090b;       /* Black focus highlight */
+    
+    /* Text colors */
+    --text-primary: #09090b;       /* Pure near-black main text (zinc-950) */
+    --text-secondary: #27272a;     /* Highly legible secondary text (zinc-800) */
+    --text-muted: #52525b;         /* Visible muted text (zinc-600) */
+    
+    /* Nav & Hover states */
+    --bg-nav-hover: rgba(0, 0, 0, 0.04);  /* Subtle light nav hover */
+    --bg-nav-active: rgba(0, 0, 0, 0.08); /* Visible light nav active block */
+    --bg-track-hover: rgba(0, 0, 0, 0.02); /* Light track card hover background */
+    
+    /* Accents */
+    --accent-blue: #09090b;        /* Black primary accent */
+    --accent-blue-hover: #27272a;  /* Hover state for primary accent */
+    --accent-red: #ef4444;         /* Error/Warning red */
+    --accent-red-bg: rgba(239, 68, 68, 0.1); /* Red warning block background */
+    --accent-green: #15803d;       /* Success green (darkened for contrast) */
+    
+    /* Buttons */
+    --bg-button-secondary: #e4e4e7;       /* Secondary button background */
+    --bg-button-secondary-hover: #d4d4d8; /* Hover state secondary button */
+    
+    /* Dedicated Console theme */
+    --bg-console: #ffffff;         /* Clean white console background */
+    --text-console: #09090b;       /* Crisp text inside console */
+    --text-log-success: #166534;   /* High-contrast green */
+    --text-log-warn: #b45309;      /* High-contrast amber/brown warning */
+    --text-log-error: #991b1b;     /* High-contrast red error */
 }
 
-/* Base reset for all HTML elements to ensure standard layouts */
+/* Base reset for all HTML elements to standardize spacing */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* Global body styles for a clean dark/light system theme */
+/* Global body styles for the full screen viewport layout */
 html, body {
     height: 100%;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -62,86 +104,12 @@ html, body {
     overflow: hidden;
 }
 
-/* Flexbox layout on body to vertically center the main container */
-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-/* Styles the main container with layout margins, centering, and height limits */
-.container {
-    position: relative;
-    max-width: 1400px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 64px 24px 32px 24px;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Adjusts the top layout padding of the main container when running in standard browser mode where the top titlebar is hidden */
-.browser-mode .container {
-    padding-top: 24px;
-}
-
-/* Styles the application top header containing the titles and subheadings */
-.header {
-    text-align: center;
-    margin-bottom: 24px;
-}
-
-/* Styles the horizontal layout centering header title and theme toggle buttons */
-.header-main {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 4px;
-}
-
-/* Styles the main heading element with clean solid font styling */
-.header h1 {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.01em;
-}
-
-/* Styles the theme switching toggle button frame in the header */
-.btn-theme-toggle {
-    background: transparent;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    outline: none;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    transition: background-color 0.15s;
-}
-
-/* Styles hover overlays for the theme switching button */
-.btn-theme-toggle:hover {
-    background-color: rgba(128, 128, 128, 0.15);
-}
-
-/* Styles the header's subtitle text to describe application utility */
-.header p {
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-/* Styles the custom window titlebar for frameless windows with professional branding */
+/* Custom titlebar strip for Electron frameless window layouts */
 .titlebar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 32px;
+    height: var(--titlebar-height);
     background-color: var(--bg-card);
     border-bottom: 1px solid var(--border-default);
     user-select: none;
@@ -152,7 +120,7 @@ body {
     z-index: 1000;
 }
 
-/* Styles the drag handle area of the titlebar for moving the desktop application window */
+/* Drag region covering titlebar allowing window relocation in Electron */
 .titlebar-drag-region {
     position: absolute;
     top: 0;
@@ -163,7 +131,7 @@ body {
     -webkit-app-region: drag;
 }
 
-/* Styles the logo container inside the custom titlebar */
+/* Branding logotype wrapper inside custom window titlebar */
 .titlebar-logo {
     display: flex;
     align-items: center;
@@ -172,19 +140,19 @@ body {
     pointer-events: none;
 }
 
-/* Styles the brand logo vector icon inside the titlebar */
+/* Vector icon for IVIDS brand inside custom window titlebar */
 .titlebar-icon {
     fill: var(--text-secondary);
 }
 
-/* Styles the branding application title string within the titlebar */
+/* Textual title inside the custom window titlebar */
 .titlebar-text {
     font-size: 12px;
     font-weight: 500;
     color: var(--text-secondary);
 }
 
-/* Styles the layout row for containing minimize, maximize, and close control triggers */
+/* Button group containing minimize, maximize and close controls */
 .titlebar-controls {
     display: flex;
     height: 100%;
@@ -192,7 +160,7 @@ body {
     -webkit-app-region: no-drag;
 }
 
-/* Styles the individual control button frames in the frameless titlebar */
+/* Individual window controls buttons inside the custom titlebar */
 .titlebar-btn {
     width: 46px;
     height: 100%;
@@ -206,48 +174,205 @@ body {
     transition: background-color 0.15s, color 0.15s;
 }
 
-/* Styles the hover background colors for general titlebar button frames */
+/* Hover highlights for general window action buttons */
 .titlebar-btn:hover {
     background-color: rgba(128, 128, 128, 0.15);
     color: var(--text-primary);
 }
 
-/* Styles the close button's hover theme for professional red accent terminations */
+/* Titlebar close action hover color containing red alerts */
 .btn-close:hover {
-    background-color: var(--accent-red) !important;
+    background-color: #ef4444 !important;
     color: #ffffff !important;
 }
 
-/* Styles the responsive 2×2 dashboard grid: config top-left, preview right (spanning 2 rows), CLI bottom-left */
-.app-layout {
-    display: grid;
-    grid-template-columns: 1fr 1.1fr;
-    grid-template-rows: auto 1fr;
-    gap: 20px;
-    align-items: stretch;
+/* Collapsible hamburger trigger shown only on mobile navigation viewports */
+.hamburger {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0 12px;
+    font-size: 18px;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Main app wrapper containing the navigation sidebar and the main content viewport */
+.app-shell {
+    display: flex;
+    height: calc(100% - var(--titlebar-height));
+    margin-top: var(--titlebar-height);
+}
+
+/* Navigation sidebar holding page routing anchors */
+.sidebar {
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border-default);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 0;
+    gap: 4px;
+    overflow-y: auto;
+}
+
+/* Section label headings inside the navigation sidebar */
+.sidebar-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding: 12px 20px 6px;
+}
+
+/* Navigation sidebar clickable routing items */
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+/* Hover styling for unselected sidebar navigation options */
+.nav-item:hover {
+    background-color: var(--bg-nav-hover);
+    color: var(--text-primary);
+}
+
+/* Active navigation selection with solid border highlights */
+.nav-item.active {
+    background-color: var(--bg-nav-active);
+    color: var(--text-primary);
+    border-left-color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Standard sizing and color behavior for vector icons in navigation rows */
+.nav-item svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    flex-shrink: 0;
+}
+
+/* Mobile responsive navigation background overlay mask */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: var(--titlebar-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 998;
+}
+
+/* Main panel container hosting active page views and margins */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 24px;
+    gap: 16px;
+}
+
+/* Page container wrapper supporting transitions and visibility */
+.page {
+    display: none;
+    flex-direction: column;
     flex: 1;
     min-height: 0;
 }
 
-/* Styles the top-left configuration panel card */
+/* Visible active page class modifier */
+.page.active {
+    display: flex;
+}
+
+/* Page heading wrapper grouping titles and visual tools */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+/* Page main titles */
+.page-header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Color theme toggle buttons */
+.btn-theme {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s;
+}
+
+/* Hover highlights for color theme toggle button */
+.btn-theme:hover {
+    background-color: var(--bg-button-secondary);
+}
+
+/* Responsive grid layout dividing main view into form, previews and logs */
+.app-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    grid-template-rows: auto 1fr;
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Base card border element styling */
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    padding: 16px;
+}
+
+/* Configuration panel placement inside dashboard grid */
 .config-panel {
     grid-column: 1;
     grid-row: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0;
 }
 
-/* Styles the right preview panel spanning both grid rows */
+/* Metadata preview panel placement inside dashboard grid */
 .preview-panel {
     grid-column: 2;
     grid-row: 1 / 3;
     display: flex;
     flex-direction: column;
     min-height: 0;
+    overflow: hidden;
 }
 
-/* Styles the bottom-left CLI feedback panel card hosting progress and console elements */
+/* Log console placement inside dashboard grid */
 .output-panel {
     grid-column: 1;
     grid-row: 2;
@@ -256,92 +381,23 @@ body {
     min-height: 0;
 }
 
-/* Styles the preview card section title header row */
-.preview-header {
-    margin-bottom: 12px;
-}
-
-/* Styles the preview panel title label */
-.preview-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-/* Styles the empty state placeholder shown when no YouTube URL is entered */
-.preview-empty {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    border: 1px dashed var(--border-default);
-    border-radius: 4px;
-    padding: 24px;
-    min-height: 200px;
-}
-
-/* Styles the play-button SVG icon in the empty preview placeholder */
-.preview-empty-icon {
-    fill: var(--text-muted);
-    opacity: 0.5;
-}
-
-/* Styles the descriptive text inside the empty preview placeholder */
-.preview-empty p {
-    font-size: 12px;
-    color: var(--text-muted);
-    text-align: center;
-}
-
-/* Styles the responsive 16:9 YouTube iframe embed wrapper */
-.preview-embed {
-    flex: 1;
-    position: relative;
-    width: 100%;
-    min-height: 200px;
-    border-radius: 4px;
-    overflow: hidden;
-    background-color: #000;
-}
-
-/* Styles the YouTube iframe to fill its embed container */
-.preview-embed iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    border-radius: 4px;
-}
-
-/* Styles the main configuration card container holding form items and parameters */
-.card {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-default);
-    border-radius: 6px;
-    padding: 20px;
-}
-
-/* Styles the block grid layouts grouping labels and form input fields */
+/* Structured layout row alignment grouping settings */
 .form-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
-/* Styles form row labels with professional bold typography */
+/* Form headings labels */
 .form-row label {
-    min-width: 100px;
+    min-width: 90px;
     font-size: 12px;
     font-weight: 600;
     color: var(--text-secondary);
 }
 
-/* Styles text input elements with solid dark background and subtle focus outlines */
+/* Text inputs containing YouTube URLs */
 .form-row input[type="text"] {
     flex: 1;
     background-color: var(--bg-input);
@@ -355,17 +411,17 @@ body {
     transition: border-color 0.15s;
 }
 
-/* Styles text input borders when focused by applying solid system colors */
+/* Active focus highlight state for text input fields */
 .form-row input[type="text"]:focus {
     border-color: var(--border-focus);
 }
 
-/* Styles placeholder strings within text boxes to be clean and understated */
+/* Placeholder styling inside input elements */
 .form-row input[type="text"]::placeholder {
     color: var(--text-muted);
 }
 
-/* Styles the row container for directory selectors and browse actions */
+/* Directory selection wrapper containing paths and browse triggers */
 .dir-row {
     display: flex;
     align-items: center;
@@ -373,27 +429,27 @@ body {
     flex: 1;
 }
 
-/* Styles the label displaying the current destination folder path */
+/* Label displaying the active output download path location */
 .dir-path {
     flex: 1;
     font-size: 12px;
     color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     background-color: var(--bg-input);
     border: 1px solid var(--border-default);
     border-radius: 4px;
     padding: 8px 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Styles the button used to prompt the folder directory browser dialog */
+/* Browse dialog button trigger */
 .btn-browse {
     background-color: var(--bg-button-secondary);
     color: var(--text-primary);
     border: 1px solid var(--border-default);
     border-radius: 4px;
-    padding: 8px 16px;
+    padding: 8px 14px;
     font-size: 12px;
     font-weight: 500;
     font-family: inherit;
@@ -402,21 +458,99 @@ body {
     transition: background-color 0.15s;
 }
 
-/* Styles the hover state of the folder picker browse button */
+/* Hover highlights for folder browser buttons */
 .btn-browse:hover {
     background-color: var(--bg-button-secondary-hover);
 }
 
-/* Styles the settings disclosure trigger anchor link for advanced options */
+/* General layout container for action triggers (Start, Cancel) */
+.actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+/* Primary solid action button representing download triggers */
+.btn-download {
+    background-color: var(--accent-blue);
+    color: var(--bg-app);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    padding: 10px 22px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+/* Hover highlights for primary action buttons */
+.btn-download:hover {
+    background-color: var(--accent-blue-hover);
+}
+
+/* Disabled state for primary action buttons */
+.btn-download:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Secondary cancel action buttons */
+.btn-cancel {
+    background-color: transparent;
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+    border-radius: 4px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+/* Hover highlights for cancel buttons */
+.btn-cancel:hover {
+    background-color: var(--accent-red-bg);
+}
+
+/* Disabled cancel button styling */
+.btn-cancel:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Secondary neutral action buttons */
+.btn-secondary {
+    background-color: var(--bg-button-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+/* Hover highlights for secondary neutral buttons */
+.btn-secondary:hover {
+    background-color: var(--bg-button-secondary-hover);
+}
+
+/* Disclosure selector trigger button showing advanced configurations */
 .advanced-toggle {
     background: none;
     border: none;
-    color: var(--border-focus);
+    color: var(--text-secondary);
     font-size: 12px;
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
     padding: 4px 0;
+    margin-top: 8px;
     margin-bottom: 8px;
     display: flex;
     align-items: center;
@@ -424,19 +558,19 @@ body {
     transition: color 0.15s;
 }
 
-/* Styles the hover color change and text underline for the advanced toggle link */
+/* Hover highlights for advanced configurations toggle buttons */
 .advanced-toggle:hover {
-    color: #60a5fa;
+    color: var(--text-primary);
     text-decoration: underline;
 }
 
-/* Styles the small chevron icon next to the advanced toggle text */
+/* Chevron symbol showing expanding toggle states */
 .chevron {
     font-size: 8px;
     color: var(--text-secondary);
 }
 
-/* Styles the layout panel for wrapping advanced configuration parameters */
+/* Advanced configurations panel containing formatting and quality options */
 .advanced-panel {
     display: none;
     gap: 16px;
@@ -445,32 +579,27 @@ body {
     margin-bottom: 12px;
 }
 
-/* Styles the class applied when advanced options are explicitly requested */
+/* Visible display properties when advanced configurations is opened */
 .advanced-panel.visible {
     display: grid;
 }
 
-/* Styles the playlist range advanced configuration group to span across both grid columns */
-.advanced-panel .adv-group:nth-child(3) {
-    grid-column: span 2;
-}
-
-/* Styles structural groupings within the advanced panel block */
+/* Vertical grouping inside advanced panel blocks */
 .adv-group {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
 
-/* Styles the labels within the advanced settings grid block */
+/* Labels describing advanced selectors */
 .adv-group label {
     font-size: 11px;
     font-weight: 600;
     color: var(--text-secondary);
 }
 
-/* Styles input boxes and dropdown selection selectors within advanced layouts */
-.adv-group select, .adv-group input {
+/* Dropdown selector selectors inside advanced configurations panel */
+.adv-group select {
     width: 100%;
     background-color: var(--bg-input);
     border: 1px solid var(--border-default);
@@ -481,249 +610,560 @@ body {
     font-family: inherit;
     outline: none;
     transition: border-color 0.15s;
+    cursor: pointer;
 }
 
-/* Styles borders of advanced form fields when focused */
-.adv-group select:focus, .adv-group input:focus {
+/* Focused outline highlight for advanced dropdown selectors */
+.adv-group select:focus {
     border-color: var(--border-focus);
 }
 
-/* Styles individual options inside select dropdown lists */
+/* Dropdown option background styling */
 .adv-group select option {
     background-color: var(--bg-card);
     color: var(--text-primary);
 }
 
-/* Styles dropdown theme selector element box container inputs */
-.select-theme {
-    flex: 1;
-    background-color: var(--bg-input);
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
-    padding: 8px 10px;
-    color: var(--text-primary);
-    font-size: 13px;
-    font-family: inherit;
-    outline: none;
-    cursor: pointer;
-    transition: border-color 0.15s;
-}
-
-/* Styles focused states of the select theme dropdown element */
-.select-theme:focus {
-    border-color: var(--border-focus);
-}
-
-/* Styles individual theme options inside the selector dropdown */
-.select-theme option {
-    background-color: var(--bg-card);
-    color: var(--text-primary);
-}
-
-/* Styles row alignments grouping download trigger actions */
-.actions {
+/* Preview panel title header row containing loading state buttons */
+.preview-header {
     display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    margin-top: 14px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
 }
 
-/* Styles the primary action download execution trigger button */
-.btn-download {
-    background-color: var(--accent-blue);
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    padding: 10px 24px;
+/* Preview panel heading labels */
+.preview-title {
     font-size: 13px;
     font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background-color 0.15s;
 }
 
-/* Styles the primary button hover highlights */
-.btn-download:hover {
-    background-color: var(--accent-blue-hover);
-}
-
-/* Styles the primary button active click interactions */
-.btn-download:active {
-    background-color: var(--accent-blue-active);
-}
-
-/* Styles the disabled state for the primary action button */
-.btn-download:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background-color: var(--accent-blue) !important;
-}
-
-/* Styles secondary/cancel action execution trigger buttons */
-.btn-cancel {
-    background-color: transparent;
-    color: var(--accent-red);
-    border: 1px solid var(--accent-red);
-    border-radius: 4px;
-    padding: 10px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background-color 0.15s, color 0.15s;
-}
-
-/* Styles hover highlights for the cancel action buttons */
-.btn-cancel:hover {
-    background-color: var(--accent-red-bg);
-    color: var(--accent-red-hover);
-}
-
-/* Styles active click states for cancel trigger buttons */
-.btn-cancel:active {
-    background-color: rgba(239, 68, 68, 0.2);
-}
-
-/* Styles disabled properties for cancel buttons during application idle states */
-.btn-cancel:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background-color: transparent !important;
-    color: var(--accent-red) !important;
-    border-color: var(--accent-red) !important;
-}
-
-/* Styles the progress sections wrapping logs, statuses, and fill-bars */
-.progress-section {
+/* Empty preview placeholder shown when no YouTube URL is active */
+.preview-empty {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0;
-}
-
-/* Styles headers separating current operations status reads from titles */
-.progress-header {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    justify-content: center;
+    gap: 12px;
+    border: 1px dashed var(--border-default);
+    border-radius: 4px;
+    padding: 32px;
 }
 
-/* Styles textual labels indicating active download operations progress values */
-.status-text {
-    font-size: 13px;
+/* Empty preview placeholder vector icons */
+.preview-empty-icon {
+    fill: var(--text-muted);
+    opacity: 0.4;
+}
+
+/* Empty preview descriptive labels text */
+.preview-empty p {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Container hosting single video preview metadata elements */
+.video-card {
+    display: flex;
+    gap: 16px;
+    padding: 14px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+}
+
+/* Thumbnail element wrappers containing duration overlays */
+.video-thumb {
+    position: relative;
+    flex-shrink: 0;
+    width: 200px;
+    height: 112px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #000;
+}
+
+/* Thumbnail image formatting inside preview cards */
+.video-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Overlaid badge showing track duration inside thumbnails */
+.video-duration {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    font-size: 11px;
     font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+}
+
+/* Textual details columns next to thumbnails */
+.video-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+/* Title labels inside single video previews */
+.video-info-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Horizontal alignments displaying channel metadata rows */
+.video-info-channel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* Rounded channel initials avatar placeholders */
+.channel-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-color: var(--bg-button-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+
+/* Track list action headers containing select/deselect buttons and track counts */
+.track-list-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-default);
+}
+
+/* Track count labels inside playlist viewports */
+.track-count {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+/* Playlist selection action buttons (Select All, Deselect All) */
+.btn-select {
+    background: none;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+/* Hover highlights for playlist selection buttons */
+.btn-select:hover {
+    background-color: var(--bg-button-secondary);
     color: var(--text-primary);
 }
 
-/* Styles metadata textual readouts describing active processed track names */
-.track-text {
-    font-size: 12px;
-    color: var(--text-secondary);
-    max-width: 60%;
-    text-align: right;
+/* Scrollable checklist boundaries containing track list card entries */
+.track-list-items {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 2px;
+}
+
+/* Individual track card elements wrapping checkboxes and thumbnails */
+.track-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+/* Hover border highlights for track card elements */
+.track-item:hover {
+    background-color: var(--bg-track-hover);
+    border-color: var(--border-hover);
+}
+
+/* Selection checkboxes inside track item cards */
+.track-cb {
+    accent-color: var(--border-focus);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Thumbnail wrapper frames within track card layouts */
+.track-thumb {
+    width: 90px;
+    height: 50px;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background-color: #000;
+}
+
+/* Thumbnail image rendering in playlist track card layouts */
+.track-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Text metadata column inside track card layouts */
+.track-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+/* Song title strings in track card layouts */
+.track-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-/* Styles container frames serving as slot boundaries for progress bar fills */
+/* Channel or artist labels in track card layouts */
+.track-artist {
+    font-size: 11px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Duration labels showing the video length inside track cards */
+.track-length {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Console status headings containing statuses and current titles */
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+/* Overall execution status indicator label text */
+.status-text {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Sub-readouts displaying current track title details */
+.track-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Progress bar container tracks */
 .progress-bar-container {
     width: 100%;
-    height: 6px;
+    height: 5px;
     background-color: var(--border-default);
     border-radius: 3px;
     overflow: hidden;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
-/* Styles visual fills mapping completed progress values */
+/* Progress bar filling indicator bars */
 .progress-bar-fill {
     height: 100%;
     width: 0%;
     background-color: var(--accent-blue);
     border-radius: 3px;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.3s;
 }
 
-/* Styles scrollable diagnostic readouts displaying raw subprocess CLI outputs */
+/* Diagnostic logging log screens display readouts */
 .console {
     flex: 1;
     background-color: var(--bg-console);
-    border: 1px solid var(--border-console);
+    border: 1px solid var(--border-default);
     border-radius: 4px;
-    padding: 12px;
+    padding: 10px;
     overflow-y: auto;
     font-family: var(--font-mono);
     font-size: 11px;
     line-height: 1.6;
-    color: var(--text-secondary);
-    min-height: 200px;
+    color: var(--text-console);
+    min-height: 120px;
 }
 
-/* Styles line rows within diagnostic readout screens */
-.console .log-line {
+/* Individual line blocks inside the logging panel */
+.log-line {
     padding: 1px 0;
     word-break: break-all;
 }
 
-/* Styles line rows outputting successful download message confirmations */
-.console .log-success {
+/* Successful process log entries highlights */
+.log-success {
+    color: var(--text-log-success);
+    font-weight: 600;
+}
+
+/* Warn level process log entries highlights */
+.log-warn {
+    color: var(--text-log-warn);
+    font-weight: 600;
+}
+
+/* Error level process log entries highlights */
+.log-error {
+    color: var(--text-log-error);
+    font-weight: 600;
+}
+
+/* Empty downloads history view placeholders */
+.downloads-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    border: 1px dashed var(--border-default);
+    border-radius: 6px;
+    margin-top: 12px;
+}
+
+/* Downloaded items vertical stack list wrappers */
+.downloads-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 12px;
+}
+
+/* Individual download entry cards */
+.dl-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+}
+
+/* Download entry file format icons backgrounds */
+.dl-icon {
+    width: 36px;
+    height: 36px;
+    background-color: var(--bg-input);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Download entry vector icon colors */
+.dl-icon svg {
+    fill: var(--text-secondary);
+    width: 18px;
+    height: 18px;
+}
+
+/* Text info column next to download status icons */
+.dl-info {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Title string labels for completed downloads */
+.dl-title {
+    font-size: 13px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Sub-metadata text describing bitrates and download dates */
+.dl-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* Status badges for download completions */
+.dl-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+/* Completed downloads success status badge highlights */
+.dl-badge.success {
+    background-color: rgba(34, 197, 94, 0.12);
     color: var(--accent-green);
-    font-weight: 600;
 }
 
-/* Styles line rows indicating processing errors or exceptions */
-.console .log-error {
+/* Aborted downloads failed status badge highlights */
+.dl-badge.failed {
+    background-color: rgba(239, 68, 68, 0.12);
     color: var(--accent-red);
-    font-weight: 600;
 }
 
-/* Styles line rows outputting non-fatal warnings or warnings alerts */
-.console .log-warn {
-    color: #fbbf24;
-}
-
-/* Styles custom scrollbar layout widths */
+/* Scrollbar dimensions styling */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
 }
 
-/* Styles scrollbar rails to be transparent and unobtrusive */
+/* Scrollbar tracks background styling */
 ::-webkit-scrollbar-track {
     background: transparent;
 }
 
-/* Styles scrollbar thumb handles with custom slate borders */
+/* Scrollbar handle styling using secondary button gray background tokens */
 ::-webkit-scrollbar-thumb {
     background-color: var(--bg-button-secondary);
     border-radius: 4px;
 }
 
-/* Styles hover highlights for scrollbar handles */
+/* Hover highlights for scrollbar handle widgets */
 ::-webkit-scrollbar-thumb:hover {
     background-color: var(--bg-button-secondary-hover);
 }
 
-/* Fallback to vertical stacked layout on narrow screens using media queries */
-@media (max-width: 600px) {
-    .container {
-        padding: 48px 12px 12px 12px;
+/* Mobile responsive collapses and viewport layout mappings */
+@media (max-width: 768px) {
+    /* Displays hamburger navigation toggles */
+    .hamburger {
+        display: flex;
     }
+
+    /* Fixed floating sidebar navigation drawer drawer overlays */
+    .sidebar {
+        position: fixed;
+        top: var(--titlebar-height);
+        left: -260px;
+        width: 260px;
+        height: calc(100% - var(--titlebar-height));
+        z-index: 999;
+        transition: left 0.25s ease;
+    }
+
+    /* Opens sidebar drawer overlay offsets */
+    .sidebar.open {
+        left: 0;
+    }
+
+    /* Backdrop displays when sidebar is open */
+    .sidebar-overlay.visible {
+        display: block;
+    }
+
+    /* Collapses app grid into single column flows */
     .app-layout {
         grid-template-columns: 1fr;
         grid-template-rows: auto auto auto;
     }
-    /* Reset grid positions for single-column stacking */
+
+    /* Resets panel grid span locations to single columns */
     .config-panel,
     .preview-panel,
     .output-panel {
         grid-column: 1;
         grid-row: auto;
     }
+
+    /* Stacks track metadata cards vertically on narrow displays */
+    .video-card {
+        flex-direction: column;
+    }
+
+    /* Fills thumbnail dimensions across screen widths on mobile */
+    .video-thumb {
+        width: 100%;
+        max-height: 180px;
+    }
+
+    /* Adjusts console log height thresholds on mobile layouts */
     .console {
-        min-height: 220px;
-        flex: none;
+        min-height: 180px;
+    }
+}
+
+/* Screen widths adjustments for tiny displays */
+@media (max-width: 480px) {
+    /* Tightens main margins */
+    .main-content {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    /* Shrinks header titles */
+    .page-header h1 {
+        font-size: 16px;
+    }
+
+    /* Shrinks setting labels widths */
+    .form-row label {
+        min-width: 70px;
+        font-size: 11px;
+    }
+
+    /* Tightens track metadata card padding spaces */
+    .track-item {
+        padding: 8px;
+        font-size: 11px;
+    }
+
+    /* Downscales track thumbnail dimensions on tiny displays */
+    .track-thumb {
+        width: 64px;
+        height: 36px;
     }
 }

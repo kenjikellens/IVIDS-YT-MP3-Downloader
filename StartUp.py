@@ -32,7 +32,7 @@ class DownloadManager:
     progress callback triggers.
     """
 
-    def __init__(self, url, output_dir, audio_format, quality, start_idx, end_idx, sse_callback):
+    def __init__(self, url, output_dir, audio_format, quality, start_idx, end_idx, selected_ids, sse_callback):
         """
         Initializes a download manager task.
         
@@ -42,6 +42,7 @@ class DownloadManager:
         :param quality: Output bitrate (320k/192k/128k)
         :param start_idx: Playlist start item sequence number (1-based)
         :param end_idx: Playlist end item sequence number (-1 for all)
+        :param selected_ids: List of video IDs to download (takes priority over ranges)
         :param sse_callback: Function to emit log, progress, status changes as SSE
         """
         self.url = url
@@ -50,6 +51,7 @@ class DownloadManager:
         self.quality = quality
         self.start_idx = start_idx
         self.end_idx = end_idx
+        self.selected_ids = selected_ids
         self.sse_callback = sse_callback
 
     def run(self):
@@ -84,16 +86,19 @@ class DownloadManager:
                 raise Exception("Could not find any videos or metadata for the provided URL.")
 
             total_tracks = len(tracks)
-            self.sse_callback("log", f"Found {total_tracks} video(s) in source link.")
+            self.sse_callback("log", f"Found ${total_tracks} video(s) in source link.")
 
-            # Filter start and end limits
-            actual_start = max(1, self.start_idx)
-            actual_end = total_tracks if (self.end_idx == -1 or self.end_idx > total_tracks) else self.end_idx
+            # Filter queue based on selected IDs if present
+            if self.selected_ids:
+                download_queue = [t for t in tracks if t["id"] in self.selected_ids]
+                actual_start = 1
+            else:
+                actual_start = max(1, self.start_idx)
+                actual_end = total_tracks if (self.end_idx == -1 or self.end_idx > total_tracks) else self.end_idx
+                if actual_start > total_tracks:
+                    raise Exception(f"Start range index ({actual_start}) exceeds playlist size ({total_tracks}).")
+                download_queue = tracks[actual_start - 1:actual_end]
 
-            if actual_start > total_tracks:
-                raise Exception(f"Start range index ({actual_start}) exceeds playlist size ({total_tracks}).")
-
-            download_queue = tracks[actual_start - 1:actual_end]
             queue_size = len(download_queue)
             self.sse_callback("log", f"Starting download queue of {queue_size} tracks.")
 
@@ -243,7 +248,7 @@ class DownloadManager:
         Queries playlist videos metadata flat list. Falls back to single format query.
         
         :param yt_dlp_path: Executable path to yt-dlp
-        :return: List of dicts containing track 'title' and 'id'
+        :return: List of dicts containing track 'title', 'id', 'duration', and 'channel'
         """
         global active_process
         cmd = [yt_dlp_path, "--flat-playlist", "--dump-json", self.url]
@@ -265,7 +270,12 @@ class DownloadManager:
             try:
                 data = json.loads(line)
                 if "id" in data and "title" in data:
-                    tracks.append({"title": data["title"], "id": data["id"]})
+                    tracks.append({
+                        "title": data["title"],
+                        "id": data["id"],
+                        "duration": data.get("duration"),
+                        "channel": data.get("channel") or data.get("uploader") or "Unknown Channel"
+                    })
             except:
                 pass
                 
@@ -285,7 +295,12 @@ class DownloadManager:
                 try:
                     data = json.loads(stdout)
                     if "id" in data and "title" in data:
-                        tracks.append({"title": data["title"], "id": data["id"]})
+                        tracks.append({
+                            "title": data["title"],
+                            "id": data["id"],
+                            "duration": data.get("duration"),
+                            "channel": data.get("channel") or data.get("uploader") or "Unknown Channel"
+                        })
                 except:
                     pass
                     
@@ -386,6 +401,8 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             self.handle_download_stream(parsed_url.query)
         elif path == "/api/cancel":
             self.handle_cancel_download()
+        elif path == "/api/fetch-metadata":
+            self.handle_fetch_metadata(parsed_url.query)
         else:
             # Fallback to serving index.html or other static files in ui/
             if path == "/" or path == "":
@@ -457,6 +474,34 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps({"status": "cancelled"}).encode('utf-8'))
 
+    def handle_fetch_metadata(self, query_string):
+        """
+        Handles incoming REST API requests to query track metadata.
+        Resolves yt-dlp, fetches playlist/video JSON info, and returns a JSON payload.
+        """
+        params = urllib.parse.parse_qs(query_string)
+        url = params.get("url", [""])[0]
+        
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        
+        if not url:
+            self.wfile.write(json.dumps({"error": "Missing URL parameter"}).encode('utf-8'))
+            return
+            
+        try:
+            # dummy callback since we just query details
+            def dummy_callback(event, data):
+                pass
+            manager = DownloadManager(url, "", "mp3", "192k", 1, -1, None, dummy_callback)
+            yt_dlp_path = manager.resolve_yt_dlp()
+            tracks = manager.fetch_track_list(yt_dlp_path)
+            self.wfile.write(json.dumps({"tracks": tracks}).encode('utf-8'))
+        except Exception as e:
+            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+
     def handle_download_stream(self, query_string):
         """
         GET /api/download?...
@@ -476,6 +521,10 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
         except:
             start_idx = 1
             end_idx = -1
+
+        selected_ids = params.get("selectedIds", [])
+        if len(selected_ids) == 1 and "," in selected_ids[0]:
+            selected_ids = selected_ids[0].split(",")
 
         # Setup chunked SSE header
         self.send_response(200)
@@ -503,7 +552,7 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
 
         try:
             cancelled = False
-            manager = DownloadManager(url, output_dir, audio_format, quality, start_idx, end_idx, emit_sse)
+            manager = DownloadManager(url, output_dir, audio_format, quality, start_idx, end_idx, selected_ids, emit_sse)
             manager.run()
         finally:
             download_lock.release()
