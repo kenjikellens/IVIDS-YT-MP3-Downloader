@@ -1414,3 +1414,130 @@ html, body {
     display: none !important;
 }
 
+
+/* Layout wrapper that stretches the media type selector to fill form row space */
+.media-type-select-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+/* Container for the custom select component that replaces native dropdowns */
+.custom-select {
+    position: relative;
+    width: 100%;
+    user-select: none;
+}
+
+/* Clickable trigger area of the custom dropdown showing the currently selected option */
+.custom-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+/* Specific background color overrides for custom select trigger in light theme */
+.light-theme .custom-select-trigger {
+    background-color: #e4e4e7;
+    border-color: #d4d4d8;
+}
+
+/* Hover highlights for the custom select trigger */
+.custom-select-trigger:hover {
+    border-color: var(--border-hover);
+}
+
+/* Hover border highlights in light theme */
+.light-theme .custom-select-trigger:hover {
+    border-color: #a1a1aa;
+}
+
+/* Active focus outline state for the custom select trigger */
+.custom-select-trigger.focus {
+    border-color: var(--border-focus);
+}
+
+/* Visual arrow indicator inside the custom select trigger */
+.custom-select-arrow {
+    font-size: 9px;
+    color: var(--text-secondary);
+    transition: color 0.15s;
+}
+
+/* Floating overlay container housing the select options list */
+.custom-select-options {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    box-shadow: var(--shadow-card);
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Specific background overrides for custom select dropdown list overlay in light theme */
+.light-theme .custom-select-options {
+    background-color: #f4f4f5;
+    border-color: #d4d4d8;
+}
+
+/* Visible state modifier class that displays the dropdown options overlay */
+.custom-select-options.open {
+    display: block;
+}
+
+/* Individual option item within the custom select dropdown list */
+.custom-select-option {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+    text-align: left;
+}
+
+/* Text color override for custom select option in light theme */
+.light-theme .custom-select-option {
+    color: #27272a;
+}
+
+/* Hover and focus highlights for individual select options */
+.custom-select-option:hover {
+    background-color: var(--bg-nav-hover);
+    color: var(--text-primary);
+}
+
+/* Hover backgrounds override in light theme */
+.light-theme .custom-select-option:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #09090b;
+}
+
+/* Styling for the currently active/selected option in the list */
+.custom-select-option.selected {
+    background-color: var(--bg-nav-active);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Selected option styling override in light theme */
+.light-theme .custom-select-option.selected {
+    background-color: rgba(0, 0, 0, 0.08);
+    color: #09090b;
+}

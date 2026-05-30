@@ -54,6 +54,7 @@ function applyTranslations() {
     if (loadedTracks && loadedTracks.length > 0) {
         renderPreview(loadedTracks);
     }
+    syncCustomSelects();
 }
 
 /**
@@ -536,10 +537,16 @@ function startDownload() {
     var dirElement = document.getElementById('dir-path');
     var outputDir = dirElement ? dirElement.textContent.trim() : '';
 
-    var formatSelect = document.getElementById('format-select');
-    var qualitySelect = document.getElementById('quality-select');
-    var format = formatSelect ? formatSelect.value : 'mp3';
-    var quality = qualitySelect ? qualitySelect.value : '192k';
+    var mediaTypeSelect = document.getElementById('media-type-select');
+    var mediaType = mediaTypeSelect ? mediaTypeSelect.value : 'audio';
+
+    var formatSelect = document.getElementById(mediaType === 'audio' ? 'format-select' : 'video-format');
+    var qualitySelect = document.getElementById(mediaType === 'audio' ? 'quality-select' : 'video-quality');
+    var format = formatSelect ? formatSelect.value : (mediaType === 'audio' ? 'mp3' : 'mp4');
+    var quality = qualitySelect ? qualitySelect.value : (mediaType === 'audio' ? '192k' : 'best');
+
+    var subfolderSelect = document.getElementById('subfolder-select');
+    var subfolder = subfolderSelect ? subfolderSelect.value : 'none';
 
     // Collect Selected track IDs
     var selectedIds = [];
@@ -576,6 +583,8 @@ function startDownload() {
     var options = {
         url: url,
         outputDir: outputDir,
+        mediaType: mediaType,
+        subfolder: subfolder,
         format: format,
         quality: quality,
         startIdx: 1,
@@ -592,6 +601,8 @@ function startDownload() {
         var queryParams = new URLSearchParams({
             url: options.url,
             outputDir: options.outputDir,
+            mediaType: options.mediaType,
+            subfolder: options.subfolder,
             format: options.format,
             quality: options.quality,
             startIdx: 1,
@@ -733,10 +744,12 @@ function onComplete(success, errorMsg) {
 
     // Track active target details to save
     var targetTitle = 'YouTube Download';
-    var qualitySelect = document.getElementById('quality-select');
-    var formatSelect = document.getElementById('format-select');
-    var q = qualitySelect ? qualitySelect.value : '192k';
-    var f = formatSelect ? formatSelect.value : 'mp3';
+    var mediaTypeSelect = document.getElementById('media-type-select');
+    var mediaType = mediaTypeSelect ? mediaTypeSelect.value : 'audio';
+    var qualitySelect = document.getElementById(mediaType === 'audio' ? 'quality-select' : 'video-quality');
+    var formatSelect = document.getElementById(mediaType === 'audio' ? 'format-select' : 'video-format');
+    var q = qualitySelect ? qualitySelect.value : (mediaType === 'audio' ? '192k' : 'best');
+    var f = formatSelect ? formatSelect.value : (mediaType === 'audio' ? 'mp3' : 'mp4');
 
     if (loadedTracks.length === 1) {
         targetTitle = loadedTracks[0].title;
@@ -948,6 +961,28 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (btnSelectAll) btnSelectAll.addEventListener('click', () => toggleSelectAll(true));
     if (btnDeselectAll) btnDeselectAll.addEventListener('click', () => toggleSelectAll(false));
 
+    // Media Type UI Toggles
+    var mediaTypeSelect = document.getElementById('media-type-select');
+    /**
+     * Updates advanced settings panel options display state based on chosen media type.
+     * Toggles visibility between audio and video options lists.
+     */
+    function updateMediaToggles() {
+        if (mediaTypeSelect) {
+            if (mediaTypeSelect.value === 'audio') {
+                document.getElementById('audio-options').style.display = 'contents';
+                document.getElementById('video-options').style.display = 'none';
+            } else {
+                document.getElementById('audio-options').style.display = 'none';
+                document.getElementById('video-options').style.display = 'contents';
+            }
+        }
+    }
+    if (mediaTypeSelect) {
+        mediaTypeSelect.addEventListener('change', updateMediaToggles);
+        updateMediaToggles();
+    }
+
     // Format select change trigger
     var formatSelect = document.getElementById('format-select');
     if (formatSelect) {
@@ -958,12 +993,24 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Input changes triggers auto metadata loads
     var urlInput = document.getElementById('url-input');
     if (urlInput) {
+        /**
+         * Listens to manual URL keyboard typing or edit events to schedule a debounced metadata reload.
+         */
         urlInput.addEventListener('input', function() {
+            if (urlInput._ignoreNextInput) {
+                urlInput._ignoreNextInput = false;
+                return;
+            }
             clearTimeout(autoLoadDebounceTimer);
             autoLoadDebounceTimer = setTimeout(loadMetadata, 500);
         });
+        /**
+         * Listens to paste events to trigger a quick metadata fetch and bypass double-loading from input.
+         */
         urlInput.addEventListener('paste', function() {
-            setTimeout(loadMetadata, 50);
+            clearTimeout(autoLoadDebounceTimer);
+            autoLoadDebounceTimer = setTimeout(loadMetadata, 50);
+            urlInput._ignoreNextInput = true;
         });
     }
 
@@ -1065,4 +1112,196 @@ window.addEventListener('DOMContentLoaded', async () => {
         // Resolve output directory configuration
         await initOutputDirectory();
     }
+
+    // Initialize custom styled dropdowns
+    initializeCustomSelects();
 });
+
+/**
+ * Automatically wraps and replaces all native HTML select dropdowns with custom styled select elements.
+ * Synchronizes options list state, selection changes, and disabled attributes automatically.
+ */
+function initializeCustomSelects() {
+    var selectElements = document.querySelectorAll('select');
+    
+    selectElements.forEach(function(select) {
+        if (select.nextElementSibling && select.nextElementSibling.classList.contains('custom-select')) {
+            return;
+        }
+
+        select.style.display = 'none';
+
+        var customSelect = document.createElement('div');
+        customSelect.className = 'custom-select';
+        
+        var trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        
+        var triggerText = document.createElement('span');
+        triggerText.className = 'custom-select-trigger-text';
+        
+        var arrow = document.createElement('span');
+        arrow.className = 'custom-select-arrow';
+        arrow.textContent = '▼';
+        
+        trigger.appendChild(triggerText);
+        trigger.appendChild(arrow);
+        customSelect.appendChild(trigger);
+
+        var optionsContainer = document.createElement('div');
+        optionsContainer.className = 'custom-select-options';
+        customSelect.appendChild(optionsContainer);
+
+        /**
+         * Rebuilds the custom dropdown option list items from the native select options.
+         * Attaches selection listeners and sets the initial active selection value.
+         */
+        function rebuildOptions() {
+            optionsContainer.innerHTML = '';
+            var options = select.querySelectorAll('option');
+            options.forEach(function(opt) {
+                var optDiv = document.createElement('div');
+                optDiv.className = 'custom-select-option';
+                optDiv.textContent = opt.textContent;
+                optDiv.setAttribute('data-value', opt.value);
+                
+                if (opt.value === select.value) {
+                    optDiv.classList.add('selected');
+                    triggerText.textContent = opt.textContent;
+                }
+
+                optDiv.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (select.disabled) return;
+                    
+                    select.value = opt.value;
+                    var event = new Event('change', { bubbles: true });
+                    select.dispatchEvent(event);
+                    
+                    optionsContainer.classList.remove('open');
+                    trigger.classList.remove('focus');
+                });
+
+                optionsContainer.appendChild(optDiv);
+            });
+        }
+
+        /**
+         * Updates the selected state and trigger text on selection change.
+         * Adds or removes styling highlights on options based on the active selection.
+         */
+        function updateSelectedState() {
+            var selectedOpt = select.querySelector('option[value="' + select.value + '"]') || select.options[select.selectedIndex];
+            if (selectedOpt) {
+                triggerText.textContent = selectedOpt.textContent;
+            }
+            optionsContainer.querySelectorAll('.custom-select-option').forEach(function(optDiv) {
+                if (optDiv.getAttribute('data-value') === select.value) {
+                    optDiv.classList.add('selected');
+                } else {
+                    optDiv.classList.remove('selected');
+                }
+            });
+        }
+
+        /**
+         * Toggles styling and cursor values on the custom trigger based on the native disabled state.
+         * Ensures a non-interactive opacity look when the native element is disabled.
+         */
+        function updateDisabledState() {
+            if (select.disabled) {
+                trigger.classList.add('disabled');
+                trigger.style.opacity = '0.5';
+                trigger.style.cursor = 'not-allowed';
+            } else {
+                trigger.classList.remove('disabled');
+                trigger.style.opacity = '1';
+                trigger.style.cursor = 'pointer';
+            }
+        }
+
+        rebuildOptions();
+        updateDisabledState();
+
+        trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (select.disabled) return;
+
+            document.querySelectorAll('.custom-select-options').forEach(function(container) {
+                if (container !== optionsContainer) {
+                    container.classList.remove('open');
+                }
+            });
+            document.querySelectorAll('.custom-select-trigger').forEach(function(trig) {
+                if (trig !== trigger) {
+                    trig.classList.remove('focus');
+                }
+            });
+
+            var isOpen = optionsContainer.classList.toggle('open');
+            if (isOpen) {
+                trigger.classList.add('focus');
+            } else {
+                trigger.classList.remove('focus');
+            }
+        });
+
+        select.addEventListener('change', function() {
+            updateSelectedState();
+        });
+
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'disabled') {
+                    updateDisabledState();
+                } else if (mutation.type === 'childList') {
+                    rebuildOptions();
+                }
+            });
+        });
+        observer.observe(select, { attributes: true, attributeFilter: ['disabled'], childList: true });
+
+        select.parentNode.insertBefore(customSelect, select.nextSibling);
+    });
+
+    if (!window.hasCustomSelectGlobalListener) {
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.custom-select-options').forEach(function(container) {
+                container.classList.remove('open');
+            });
+            document.querySelectorAll('.custom-select-trigger').forEach(function(trig) {
+                trig.classList.remove('focus');
+            });
+        });
+        window.hasCustomSelectGlobalListener = true;
+    }
+}
+
+/**
+ * Synchronizes the visual text of all custom selects with their translated native counterparts.
+ * This is called after applying translations to update dropdown option labels dynamically.
+ */
+function syncCustomSelects() {
+    var selectElements = document.querySelectorAll('select');
+    selectElements.forEach(function(select) {
+        var customSelect = select.nextElementSibling;
+        if (customSelect && customSelect.classList.contains('custom-select')) {
+            var triggerText = customSelect.querySelector('.custom-select-trigger-text');
+            var selectedOpt = select.querySelector('option[value="' + select.value + '"]') || select.options[select.selectedIndex];
+            if (selectedOpt && triggerText) {
+                triggerText.textContent = selectedOpt.textContent;
+            }
+            
+            var optionsContainer = customSelect.querySelector('.custom-select-options');
+            if (optionsContainer) {
+                var optDivs = optionsContainer.querySelectorAll('.custom-select-option');
+                var options = select.querySelectorAll('option');
+                optDivs.forEach(function(optDiv, index) {
+                    if (options[index]) {
+                        optDiv.textContent = options[index].textContent;
+                    }
+                });
+            }
+        }
+    });
+}

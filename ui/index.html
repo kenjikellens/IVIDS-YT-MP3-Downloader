@@ -95,6 +95,17 @@
                             </div>
                         </div>
 
+                        <!-- Media Type Dropdown -->
+                        <div class="form-row">
+                            <label for="media-type-select" data-i18n="home_media_type">Media Type</label>
+                            <div class="media-type-select-wrapper">
+                                <select id="media-type-select">
+                                    <option value="audio" selected>🎵 Audio</option>
+                                    <option value="video">🎬 Video</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- Advanced Settings Disclosure Trigger -->
                         <button class="advanced-toggle" id="advanced-toggle" data-i18n="home_advanced">
                             ⚙ Advanced Settings
@@ -102,25 +113,60 @@
 
                         <!-- Advanced Settings panel grid -->
                         <div class="advanced-panel" id="advanced-panel">
-                            <div class="adv-group">
-                                <label for="format-select" data-i18n="home_format">Audio Format</label>
-                                <select id="format-select">
-                                    <option value="mp3" selected>MP3</option>
-                                    <option value="m4a">M4A</option>
-                                    <option value="wav">WAV</option>
-                                    <option value="opus">Opus</option>
-                                    <option value="best" data-i18n="home_format_best">Original (No Transcoding)</option>
-                                </select>
+                            <div id="audio-options" style="display: contents;">
+                                <div class="adv-group">
+                                    <label for="format-select" data-i18n="home_format">Audio Format</label>
+                                    <select id="format-select">
+                                        <option value="mp3" selected>MP3</option>
+                                        <option value="m4a">M4A</option>
+                                        <option value="wav">WAV</option>
+                                        <option value="opus">Opus</option>
+                                        <option value="best" data-i18n="home_format_best">Original (No Transcoding)</option>
+                                    </select>
+                                </div>
+                                <div class="adv-group">
+                                    <label for="quality-select" data-i18n="home_quality">Audio Quality</label>
+                                    <select id="quality-select">
+                                        <option value="320k">320 kbps (best transcode)</option>
+                                        <option value="256k">256 kbps (very high)</option>
+                                        <option value="192k" selected>192 kbps (high)</option>
+                                        <option value="128k">128 kbps (medium)</option>
+                                        <option value="96k">96 kbps (low)</option>
+                                        <option value="64k">64 kbps (very low)</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="adv-group">
-                                <label for="quality-select" data-i18n="home_quality">Audio Quality</label>
-                                <select id="quality-select">
-                                    <option value="320k">320 kbps (best transcode)</option>
-                                    <option value="256k">256 kbps (very high)</option>
-                                    <option value="192k" selected>192 kbps (high)</option>
-                                    <option value="128k">128 kbps (medium)</option>
-                                    <option value="96k">96 kbps (low)</option>
-                                    <option value="64k">64 kbps (very low)</option>
+
+                            <div id="video-options" style="display: none;">
+                                <div class="adv-group">
+                                    <label for="video-format">Video Format</label>
+                                    <select id="video-format">
+                                        <option value="mp4" selected>MP4</option>
+                                        <option value="webm">WebM</option>
+                                        <option value="mkv">MKV</option>
+                                        <option value="best">Original (No Transcoding)</option>
+                                    </select>
+                                </div>
+                                <div class="adv-group">
+                                    <label for="video-quality">Video Quality</label>
+                                    <select id="video-quality">
+                                        <option value="best" selected>Best Available</option>
+                                        <option value="2160">4K (2160p)</option>
+                                        <option value="1440">1440p</option>
+                                        <option value="1080">1080p (Full HD)</option>
+                                        <option value="720">720p (HD)</option>
+                                        <option value="480">480p (SD)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="adv-group" style="grid-column: 1 / -1;">
+                                <label for="subfolder-select">Subfolder Organization</label>
+                                <select id="subfolder-select">
+                                    <option value="none" selected>None (Save directly to folder)</option>
+                                    <option value="year">By Upload Year (e.g. 2008/Title)</option>
+                                    <option value="playlist">By Playlist (e.g. Playlist Name/Title)</option>
+                                    <option value="channel">By Channel (e.g. Creator/Title)</option>
                                 </select>
                             </div>
                         </div>

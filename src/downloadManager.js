@@ -29,6 +29,8 @@ class DownloadManager {
     constructor(options, listener) {
         this.url = options.url;
         this.outputDir = options.outputDir;
+        this.mediaType = options.mediaType || 'audio';
+        this.subfolder = options.subfolder || 'none';
         this.format = options.format;
         this.quality = options.quality;
         this.startIdx = options.startIdx;
@@ -376,17 +378,42 @@ class DownloadManager {
     executeTrackDownload(ytDlpPath, ffmpegPath, track, trackIndex, totalItems) {
         return new Promise((resolve, reject) => {
             const videoUrl = `https://www.youtube.com/watch?v=${track.id}`;
-            const outputTemplate = path.join(this.outputDir, '%(title)s.%(ext)s');
+            let subfolderPath = '';
+            if (this.subfolder === 'year') {
+                subfolderPath = '%(upload_date>%Y|Unknown Year)s/';
+            } else if (this.subfolder === 'playlist') {
+                subfolderPath = '%(playlist|Unknown Playlist)s/';
+            } else if (this.subfolder === 'channel') {
+                subfolderPath = '%(uploader|Unknown Channel)s/';
+            }
 
-            const args = [
-                '--extract-audio',
-                '--audio-format', this.format,
-                '--audio-quality', this.quality,
-                '--concurrent-fragments', '5',
-                '--no-playlist',
-                '-o', outputTemplate,
-                videoUrl
-            ];
+            const outputTemplate = path.join(this.outputDir, subfolderPath + '%(title)s.%(ext)s');
+
+            const args = [];
+            if (this.mediaType === 'video') {
+                let formatStr = 'bestvideo+bestaudio/best';
+                if (this.quality !== 'best') {
+                    formatStr = `bestvideo[height<=${this.quality}]+bestaudio/best`;
+                }
+                args.push('--format', formatStr);
+                if (this.format !== 'best') {
+                    args.push('--merge-output-format', this.format);
+                }
+                args.push('--concurrent-fragments', '5');
+                args.push('--no-playlist');
+                args.push('-o', outputTemplate);
+                args.push(videoUrl);
+            } else {
+                args.push('--extract-audio');
+                args.push('--audio-format', this.format);
+                if (this.format !== 'best') {
+                    args.push('--audio-quality', this.quality);
+                }
+                args.push('--concurrent-fragments', '5');
+                args.push('--no-playlist');
+                args.push('-o', outputTemplate);
+                args.push(videoUrl);
+            }
 
             if (ffmpegPath !== 'ffmpeg') {
                 args.push('--ffmpeg-location', ffmpegPath);

@@ -32,14 +32,17 @@ class DownloadManager:
     progress callback triggers.
     """
 
-    def __init__(self, url, output_dir, audio_format, quality, start_idx, end_idx, selected_ids, sse_callback, concurrency=1):
+    def __init__(self, url, output_dir, media_type, subfolder, format, quality, start_idx, end_idx, selected_ids, sse_callback, concurrency=1):
         """
-        Initializes a download manager task.
+        Initializes a download manager task and its configuration parameters.
+        Stores download preferences and callback emitters in the manager instance state.
         
         :param url: The YouTube URL
         :param output_dir: Directory where tracks should be saved
-        :param audio_format: Target audio compression extension (mp3/m4a/wav)
-        :param quality: Output bitrate (320k/192k/128k)
+        :param media_type: Target media type (video/audio)
+        :param subfolder: Subfolder nesting template preference (year/playlist/channel/none)
+        :param format: Target output format extension
+        :param quality: Target quality bitrate or height limit
         :param start_idx: Playlist start item sequence number (1-based)
         :param end_idx: Playlist end item sequence number (-1 for all)
         :param selected_ids: List of video IDs to download (takes priority over ranges)
@@ -48,7 +51,9 @@ class DownloadManager:
         """
         self.url = url
         self.output_dir = output_dir
-        self.audio_format = audio_format
+        self.media_type = media_type or "audio"
+        self.subfolder = subfolder or "none"
+        self.format = format
         self.quality = quality
         self.start_idx = start_idx
         self.end_idx = end_idx
@@ -362,7 +367,8 @@ class DownloadManager:
 
     def execute_track_download(self, yt_dlp_path, ffmpeg_path, track, track_idx, total_items, progress_callback=None):
         """
-        Downloads a single track. Parses download rates and updates global progress.
+        Downloads a single track as video or audio using yt-dlp and ffmpeg.
+        Parses download rates from subprocess stdout and updates global progress values.
         
         :param yt_dlp_path: Executable path for yt-dlp
         :param ffmpeg_path: Executable path for ffmpeg
@@ -373,18 +379,44 @@ class DownloadManager:
         """
         global active_processes
         video_url = f"https://www.youtube.com/watch?v={track['id']}"
-        output_template = os.path.join(self.output_dir, "%(title)s.%(ext)s")
         
-        cmd = [
-            yt_dlp_path,
-            "--extract-audio",
-            "--audio-format", self.audio_format,
-            "--audio-quality", self.quality,
-            "--concurrent-fragments", "5",
-            "--no-playlist",
-            "-o", output_template,
-            video_url
-        ]
+        subfolder_path = ""
+        if self.subfolder == "year":
+            subfolder_path = "%(upload_date>%Y|Unknown Year)s/"
+        elif self.subfolder == "playlist":
+            subfolder_path = "%(playlist|Unknown Playlist)s/"
+        elif self.subfolder == "channel":
+            subfolder_path = "%(uploader|Unknown Channel)s/"
+
+        output_template = os.path.join(self.output_dir, subfolder_path + "%(title)s.%(ext)s")
+        
+        cmd = [yt_dlp_path]
+        if self.media_type == "video":
+            format_str = "bestvideo+bestaudio/best"
+            if self.quality != "best":
+                format_str = f"bestvideo[height<={self.quality}]+bestaudio/best"
+            cmd.extend(["--format", format_str])
+            if self.format != "best":
+                cmd.extend(["--merge-output-format", self.format])
+            cmd.extend([
+                "--concurrent-fragments", "5",
+                "--no-playlist",
+                "-o", output_template,
+                video_url
+            ])
+        else:
+            cmd.extend([
+                "--extract-audio",
+                "--audio-format", self.format
+            ])
+            if self.format != "best":
+                cmd.extend(["--audio-quality", self.quality])
+            cmd.extend([
+                "--concurrent-fragments", "5",
+                "--no-playlist",
+                "-o", output_template,
+                video_url
+            ])
         
         if ffmpeg_path != "ffmpeg":
             cmd.extend(["--ffmpeg-location", ffmpeg_path])
@@ -395,6 +427,7 @@ class DownloadManager:
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             
         # Combine stdout and stderr to avoid classic buffer deadlock
+        self.sse_callback("log", f"Executing yt-dlp with arguments: {cmd}")
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
                                 text=True, encoding='utf-8', errors='replace', startupinfo=startupinfo)
         active_processes.add(proc)
@@ -423,8 +456,8 @@ class DownloadManager:
                         
                 if (line_str.startswith("[download]") or 
                     line_str.startswith("[ffmpeg]") or 
-                    line_str.lower().startswith("error") or 
-                    line_str.lower().startswith("warning")):
+                    "error" in line_str.lower() or 
+                    "warning" in line_str.lower()):
                     self.sse_callback("log", line_str)
         finally:
             proc.wait()
@@ -560,7 +593,7 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             # dummy callback since we just query details
             def dummy_callback(event, data):
                 pass
-            manager = DownloadManager(url, "", "mp3", "192k", 1, -1, None, dummy_callback)
+            manager = DownloadManager(url, "", "audio", "none", "mp3", "192k", 1, -1, None, dummy_callback)
             yt_dlp_path = manager.resolve_yt_dlp()
             tracks = manager.fetch_track_list(yt_dlp_path)
             self.wfile.write(json.dumps({"tracks": tracks}).encode('utf-8'))
@@ -569,15 +602,17 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
 
     def handle_download_stream(self, query_string):
         """
-        GET /api/download?...
-        Initializes Server-Sent Events (SSE) stream. Blocks handler and triggers download threads.
+        Initializes a Server-Sent Events (SSE) stream for download progress.
+        Parses query parameters, instantiates a DownloadManager, and triggers the download sequence.
         """
         global cancelled, active_processes
         params = urllib.parse.parse_qs(query_string)
         
         url = params.get("url", [""])[0]
         output_dir = params.get("outputDir", [""])[0]
-        audio_format = params.get("format", ["mp3"])[0]
+        media_type = params.get("mediaType", ["audio"])[0]
+        subfolder = params.get("subfolder", ["none"])[0]
+        format = params.get("format", ["mp3"])[0]
         quality = params.get("quality", ["192k"])[0]
         
         try:
@@ -622,7 +657,7 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             
         try:
             cancelled = False
-            manager = DownloadManager(url, output_dir, audio_format, quality, start_idx, end_idx, selected_ids, emit_sse, concurrency)
+            manager = DownloadManager(url, output_dir, media_type, subfolder, format, quality, start_idx, end_idx, selected_ids, emit_sse, concurrency)
             manager.run()
         finally:
             download_lock.release()
