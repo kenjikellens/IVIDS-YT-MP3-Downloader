@@ -1340,12 +1340,9 @@ html, body {
 
 /* Custom formatting centering Settings panel wrapper container */
 #page-settings {
-    margin: 0 auto;
-    width: 50%;
-    min-width: min(300px, 100%);
-    max-width: 100%;
-    overflow-y: auto;
+    width: 100%;
     height: 100%;
+    overflow-y: auto;
 }
 
 /* Wrapper to center settings content vertically when space is available */
@@ -1353,9 +1350,11 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    margin: auto 0;
+    margin: auto;
     padding: 24px 0;
-    width: 100%;
+    width: 50%;
+    min-width: min(300px, 100%);
+    max-width: 100%;
 }
 
 /* Header title text specific to the Settings page */
