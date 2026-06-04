@@ -1341,12 +1341,21 @@ html, body {
 /* Custom formatting centering Settings panel wrapper container */
 #page-settings {
     margin: 0 auto;
-    padding-top: 15vh;
-    padding-bottom: 15vh;
     width: 50%;
     min-width: min(300px, 100%);
     max-width: 100%;
     overflow-y: auto;
+    height: 100%;
+}
+
+/* Wrapper to center settings content vertically when space is available */
+.settings-page-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: auto 0;
+    padding: 24px 0;
+    width: 100%;
 }
 
 /* Header title text specific to the Settings page */
