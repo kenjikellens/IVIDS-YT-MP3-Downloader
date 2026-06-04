@@ -1340,7 +1340,10 @@ html, body {
 
 /* Custom margin formatting centering Settings panel wrapper container */
 #page-settings {
-    margin: 15vh 30%;
+    margin: 15vh auto;
+    width: 40%;
+    min-width: min(250px, 100%);
+    max-width: 100%;
 }
 
 /* Header title text specific to the Settings page */
@@ -1354,7 +1357,7 @@ html, body {
     flex-direction: column;
     gap: 16px;
     padding: 24px;
-    min-width: 320px;
+    min-width: min(250px, 100%);
 }
 
 /* Horizontal settings configuration panel element layout row spacing */
