@@ -1345,21 +1345,29 @@ html, body {
     overflow-y: auto;
 }
 
-/* Wrapper to center settings content vertically when space is available */
+/* Wrapper to hold settings content aligned at the top */
 .settings-page-wrapper {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    margin: auto;
-    padding: 24px 0;
+    margin: 0 auto;
+    padding: 0 0 24px 0;
     width: 50%;
     min-width: min(300px, 100%);
     max-width: 100%;
 }
 
-/* Header title text specific to the Settings page */
+/* Header wrapper specific to the Settings page to center the title */
+#page-settings .page-header {
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+/* Header title text specific to the Settings page capitalized and centered */
 #page-settings .page-header h1 {
     font-size: 24px;
+    text-transform: uppercase;
+    text-align: center;
 }
 
 /* Styling panel containing application configuration cards layout spacing */
