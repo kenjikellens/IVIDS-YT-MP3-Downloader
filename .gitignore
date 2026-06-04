@@ -17,3 +17,7 @@ yt-dlp.exe
 ffmpeg.exe
 ffprobe.exe
 ffmpeg-release-essentials.zip
+
+# Built artifacts
+/*.exe
+/*.apk
