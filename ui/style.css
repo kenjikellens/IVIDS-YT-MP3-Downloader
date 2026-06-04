@@ -1342,7 +1342,7 @@ html, body {
 #page-settings {
     margin: 15vh auto;
     width: 40%;
-    min-width: min(250px, 100%);
+    min-width: min(300px, 100%);
     max-width: 100%;
 }
 
@@ -1357,7 +1357,7 @@ html, body {
     flex-direction: column;
     gap: 16px;
     padding: 24px;
-    min-width: min(250px, 100%);
+    min-width: min(300px, 100%);
 }
 
 /* Horizontal settings configuration panel element layout row spacing */
