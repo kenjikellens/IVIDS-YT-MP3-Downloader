@@ -1498,6 +1498,8 @@ html, body {
 .settings-lang-select-wrapper {
     display: flex;
     align-items: center;
+    width: 180px;
+    flex-shrink: 0;
 }
 
 /* Dropdown select element for choosing UI language preference */
