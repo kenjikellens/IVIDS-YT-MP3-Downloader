@@ -527,6 +527,15 @@ function toggleSelectAll(checked) {
  * Disables start controls, enables cancel controls, and sets up status stream listener callbacks.
  */
 function startDownload() {
+    var btnDownload = document.getElementById('btn-download');
+    
+    // Check if the single button is currently in Cancel state.
+    // If it is, clicking it triggers the cancel action instead of a new download.
+    if (btnDownload && btnDownload.classList.contains('btn-cancel')) {
+        cancelDownload();
+        return;
+    }
+
     var urlInput = document.getElementById('url-input');
     var url = urlInput ? urlInput.value.trim() : '';
     if (!url) {
@@ -563,13 +572,16 @@ function startDownload() {
         return;
     }
 
-    // Toggle active state buttons
-    var btnDownload = document.getElementById('btn-download');
-    var btnCancel = document.getElementById('btn-cancel');
+    // Toggle active state on the single download button:
+    // Change style to cancel (red theme), change translation key to home_cancel, and update button label.
     var consoleElement = document.getElementById('console');
 
-    if (btnDownload) btnDownload.disabled = true;
-    if (btnCancel) btnCancel.disabled = false;
+    if (btnDownload) {
+        btnDownload.classList.remove('btn-download');
+        btnDownload.classList.add('btn-cancel');
+        btnDownload.setAttribute('data-i18n', 'home_cancel');
+        btnDownload.textContent = getTranslation('home_cancel', 'Cancel');
+    }
     if (consoleElement) consoleElement.innerHTML = '';
 
     setProgress(0);
@@ -737,10 +749,16 @@ function setStatus(status, track) {
  */
 function onComplete(success, errorMsg) {
     var btnDownload = document.getElementById('btn-download');
-    var btnCancel = document.getElementById('btn-cancel');
 
-    if (btnDownload) btnDownload.disabled = false;
-    if (btnCancel) btnCancel.disabled = true;
+    // Reset the single button state back to Download:
+    // Change style to download (green theme), change translation key to home_start, and update button label.
+    if (btnDownload) {
+        btnDownload.classList.remove('btn-cancel');
+        btnDownload.classList.add('btn-download');
+        btnDownload.setAttribute('data-i18n', 'home_start');
+        btnDownload.textContent = getTranslation('home_start', 'Start Download');
+        btnDownload.disabled = false;
+    }
 
     // Track active target details to save
     var targetTitle = 'YouTube Download';

@@ -8,7 +8,7 @@
     
     /* Borders */
     --border-default: #27272a;     /* Defined border (slate-800) */
-    --border-hover: #3f3f46;       /* Focus/hover border (slate-700) */
+    --border-hover: #60a5fa;       /* Hover border (light blue) */
     --border-focus: #ffffff;       /* Pure white focus highlight */
     
     /* Text colors */
@@ -63,7 +63,7 @@
     
     /* Borders */
     --border-default: #d4d4d8;     /* Visible light border (zinc-300) */
-    --border-hover: #a1a1aa;       /* Focus/hover border (zinc-400) */
+    --border-hover: #2563eb;       /* Hover border (blue) */
     --border-focus: #09090b;       /* Black focus highlight */
     
     /* Text colors */
@@ -196,9 +196,21 @@ html, body {
     color: var(--text-primary);
 }
 
+/* Active press highlights for general window action buttons */
+.titlebar-btn:active {
+    background-color: rgba(128, 128, 128, 0.25);
+    color: var(--text-primary);
+}
+
 /* Titlebar close action hover color containing red alerts */
 .btn-close:hover {
     background-color: #ef4444 !important;
+    color: #ffffff !important;
+}
+
+/* Active press highlights for titlebar close action button */
+.btn-close:active {
+    background-color: #dc2626 !important;
     color: #ffffff !important;
 }
 
@@ -214,6 +226,18 @@ html, body {
     height: 100%;
     align-items: center;
     justify-content: center;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+/* Hover highlights for collapsible hamburger trigger */
+.hamburger:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-nav-hover);
+}
+
+/* Active press highlights for collapsible hamburger trigger */
+.hamburger:active {
+    background-color: var(--bg-nav-active);
 }
 
 /* Main app wrapper containing the navigation sidebar and the main content viewport */
@@ -264,6 +288,11 @@ html, body {
 .nav-item:hover {
     background-color: var(--bg-nav-hover);
     color: var(--text-primary);
+}
+
+/* Active press highlights for sidebar navigation options */
+.nav-item:active {
+    background-color: var(--bg-nav-active);
 }
 
 /* Active navigation selection with solid border highlights */
@@ -335,7 +364,7 @@ html, body {
 /* Color theme toggle buttons */
 .btn-theme {
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     font-size: 18px;
     cursor: pointer;
     width: 34px;
@@ -344,12 +373,20 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.15s;
+    transform: scale(1);
+    transition: background-color 0.15s, border-color 0.15s, transform 0.1s ease;
 }
 
 /* Hover highlights for color theme toggle button */
 .btn-theme:hover {
     background-color: var(--bg-button-secondary);
+    border-color: var(--border-hover);
+}
+
+/* Active press highlights for color theme toggle button */
+.btn-theme:active {
+    background-color: var(--bg-button-secondary-hover);
+    transform: scale(0.95);
 }
 
 /* Responsive grid layout dividing main view into form, previews and logs */
@@ -428,6 +465,11 @@ html, body {
     transition: border-color 0.15s;
 }
 
+/* Hover highlights for text input fields */
+.form-row input[type="text"]:hover {
+    border-color: var(--border-hover);
+}
+
 /* Active focus highlight state for text input fields */
 .form-row input[type="text"]:focus {
     border-color: var(--border-focus);
@@ -472,12 +514,20 @@ html, body {
     font-family: inherit;
     cursor: pointer;
     white-space: nowrap;
-    transition: background-color 0.15s;
+    transform: scale(1);
+    transition: background-color 0.15s, border-color 0.15s, transform 0.1s ease;
 }
 
 /* Hover highlights for folder browser buttons */
 .btn-browse:hover {
     background-color: var(--bg-button-secondary-hover);
+    border-color: var(--border-hover);
+}
+
+/* Active press highlights for folder browser buttons */
+.btn-browse:active {
+    transform: scale(0.95);
+    filter: brightness(0.9);
 }
 
 /* General layout container for action triggers (Start, Cancel) */
@@ -499,18 +549,33 @@ html, body {
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: background-color 0.15s;
+    transform: scale(1);
+    transition: background-color 0.15s, border-color 0.15s, transform 0.1s ease, box-shadow 0.15s;
 }
 
 /* Hover highlights for primary action buttons */
 .btn-download:hover {
     background-color: var(--bg-download-hover);
+    border-color: var(--accent-green);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.25);
+}
+
+/* Hover highlights for primary action buttons in light theme */
+.light-theme .btn-download:hover {
+    box-shadow: 0 0 8px rgba(21, 128, 61, 0.25);
+}
+
+/* Active press highlights for primary action buttons */
+.btn-download:active:not(:disabled) {
+    transform: scale(0.95);
+    filter: brightness(0.85);
 }
 
 /* Disabled state for primary action buttons */
 .btn-download:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
 }
 
 /* Secondary cancel action buttons */
@@ -524,12 +589,21 @@ html, body {
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: background-color 0.15s, color 0.15s;
+    transform: scale(1);
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.1s ease, box-shadow 0.15s;
 }
 
 /* Hover highlights for cancel buttons */
 .btn-cancel:hover {
     background-color: var(--accent-red-bg);
+    border-color: var(--accent-red);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+}
+
+/* Active press highlights for cancel buttons */
+.btn-cancel:active:not(:disabled) {
+    transform: scale(0.95);
+    background-color: rgba(239, 68, 68, 0.25);
 }
 
 /* Disabled cancel button styling */
@@ -549,12 +623,20 @@ html, body {
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
-    transition: background-color 0.15s;
+    transform: scale(1);
+    transition: background-color 0.15s, border-color 0.15s, transform 0.1s ease;
 }
 
 /* Hover highlights for secondary neutral buttons */
 .btn-secondary:hover {
     background-color: var(--bg-button-secondary-hover);
+    border-color: var(--border-hover);
+}
+
+/* Active press highlights for secondary neutral buttons */
+.btn-secondary:active {
+    transform: scale(0.95);
+    filter: brightness(0.9);
 }
 
 /* Disclosure selector trigger button showing advanced configurations */
@@ -579,6 +661,11 @@ html, body {
 .advanced-toggle:hover {
     color: var(--text-link-blue-hover);
     text-decoration: underline;
+}
+
+/* Active press highlights for advanced configurations toggle buttons */
+.advanced-toggle:active {
+    opacity: 0.8;
 }
 
 /* Chevron symbol showing expanding toggle states */
@@ -628,6 +715,16 @@ html, body {
     outline: none;
     transition: border-color 0.15s;
     cursor: pointer;
+}
+
+/* Hover highlights for advanced dropdown selectors */
+.adv-group select:hover {
+    border-color: var(--border-hover);
+}
+
+/* Active press highlights for advanced dropdown selectors */
+.adv-group select:active {
+    border-color: var(--border-focus);
 }
 
 /* Focused outline highlight for advanced dropdown selectors */
@@ -798,13 +895,21 @@ html, body {
     padding: 4px 10px;
     cursor: pointer;
     font-family: inherit;
-    transition: background-color 0.15s, color 0.15s;
+    transform: scale(1);
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.1s ease;
 }
 
 /* Hover highlights for playlist selection buttons */
 .btn-select:hover {
     background-color: var(--bg-button-secondary);
     color: var(--text-primary);
+    border-color: var(--border-hover);
+}
+
+/* Active press highlights for playlist selection buttons */
+.btn-select:active {
+    transform: scale(0.95);
+    background-color: var(--bg-button-secondary-hover);
 }
 
 /* Scrollable checklist boundaries containing track list card entries */
@@ -827,13 +932,20 @@ html, body {
     border: 1px solid var(--border-default);
     border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.15s, border-color 0.15s;
+    transform: scale(1);
+    transition: background-color 0.15s, border-color 0.15s, transform 0.15s ease;
 }
 
 /* Hover border highlights for track card elements */
 .track-item:hover {
-    background-color: var(--bg-track-hover);
+    background-color: var(--bg-nav-hover);
     border-color: var(--border-hover);
+}
+
+/* Active press highlights for track card elements */
+.track-item:active {
+    transform: scale(0.985);
+    background-color: var(--bg-nav-active);
 }
 
 /* Selection checkboxes inside track item cards */
@@ -1306,8 +1418,19 @@ html, body {
     border: 1px solid var(--text-primary);
     position: relative;
     cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s;
+    transform: scale(1);
+    transition: background-color 0.2s, border-color 0.2s, opacity 0.15s, transform 0.1s ease;
     outline: none;
+}
+
+/* Hover highlights for the theme switch slider */
+.theme-switch:hover {
+    opacity: 0.95;
+}
+
+/* Active press highlights for the theme switch slider */
+.theme-switch:active {
+    transform: scale(0.95);
 }
 
 /* Sliding knob handle within the theme switch track */
@@ -1377,6 +1500,16 @@ html, body {
     min-width: 150px;
 }
 
+/* Hover highlights for settings language selector */
+.settings-lang-select:hover {
+    border-color: var(--border-hover);
+}
+
+/* Active press highlights for settings language selector */
+.settings-lang-select:active {
+    border-color: var(--border-focus);
+}
+
 /* Focused border highlight for settings language selector */
 .settings-lang-select:focus {
     border-color: var(--border-focus);
@@ -1443,7 +1576,8 @@ html, body {
     font-size: 13px;
     font-family: inherit;
     cursor: pointer;
-    transition: border-color 0.15s, background-color 0.15s;
+    transform: scale(1);
+    transition: border-color 0.15s, background-color 0.15s, transform 0.1s ease;
 }
 
 /* Specific background color overrides for custom select trigger in light theme */
@@ -1457,9 +1591,10 @@ html, body {
     border-color: var(--border-hover);
 }
 
-/* Hover border highlights in light theme */
-.light-theme .custom-select-trigger:hover {
-    border-color: #a1a1aa;
+/* Active press highlights for the custom select trigger */
+.custom-select-trigger:active {
+    transform: scale(0.98);
+    background-color: var(--bg-nav-hover);
 }
 
 /* Active focus outline state for the custom select trigger */
@@ -1521,6 +1656,11 @@ html, body {
 .custom-select-option:hover {
     background-color: var(--bg-nav-hover);
     color: var(--text-primary);
+}
+
+/* Active press highlights for individual select options */
+.custom-select-option:active {
+    background-color: var(--bg-nav-active);
 }
 
 /* Hover backgrounds override in light theme */
