@@ -1338,12 +1338,15 @@ html, body {
     font-size: 13px;
 }
 
-/* Custom margin formatting centering Settings panel wrapper container */
+/* Custom formatting centering Settings panel wrapper container */
 #page-settings {
-    margin: 15vh auto;
-    width: 40%;
+    margin: 0 auto;
+    padding-top: 15vh;
+    padding-bottom: 15vh;
+    width: 50%;
     min-width: min(300px, 100%);
     max-width: 100%;
+    overflow-y: auto;
 }
 
 /* Header title text specific to the Settings page */
@@ -1518,14 +1521,11 @@ html, body {
     border-color: var(--border-focus);
 }
 
-/* Scrollable vertical wrapper container for settings card sections */
+/* Vertical wrapper container for settings card sections */
 .settings-sections-container {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    flex: 1;
-    overflow-y: auto;
-    padding-right: 4px;
 }
 
 /* Inner setting section block holding a header title and option card */
