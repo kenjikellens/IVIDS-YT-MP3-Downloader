@@ -41,9 +41,13 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
+rem 4. Move executable to root and clean dist folder
+echo Moving executable to root directory...
+move "dist\IVIDS YT MP3 Downloader.exe" ".\" >nul
+if exist dist rmdir /s /q dist
+
 echo ==============================================
 echo Build Completed Successfully!
-echo Output directory: dist\
-echo Portable EXE: dist\IVIDS YT MP3 Downloader.exe
+echo Portable EXE: IVIDS YT MP3 Downloader.exe
 echo ==============================================
 pause

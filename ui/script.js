@@ -211,23 +211,21 @@ function setOutputDir(folderPath) {
 async function browseDirectory() {
     try {
         var isElectron = !!window.electronAPI;
-        var folderPath = null;
-
         if (isElectron) {
-            folderPath = await window.electronAPI.selectDirectory();
+            var input = document.getElementById('dir-input');
+            if (input) input.click();
         } else {
             var response = await fetch('/api/select-directory');
             if (!response.ok) throw new Error('Network error selecting folder');
             var data = await response.json();
-            folderPath = data.path;
-        }
-
-        if (folderPath) {
-            setOutputDir(folderPath);
-            try {
-                localStorage.setItem('last-dir', folderPath);
-            } catch (e) {}
-            addLog(getTranslation('log_output_folder_set', 'Output folder set to: ') + folderPath);
+            var folderPath = data.path;
+            if (folderPath) {
+                setOutputDir(folderPath);
+                try {
+                    localStorage.setItem('last-dir', folderPath);
+                } catch (e) {}
+                addLog(getTranslation('log_output_folder_set', 'Output folder set to: ') + folderPath);
+            }
         }
     } catch (err) {
         addLog('[Error] ' + getTranslation('log_failed_select_dir', 'Failed to select directory: ') + err.message);
@@ -241,28 +239,26 @@ async function browseDirectory() {
 async function browseDefaultDirectory() {
     try {
         var isElectron = !!window.electronAPI;
-        var folderPath = null;
-
         if (isElectron) {
-            folderPath = await window.electronAPI.selectDirectory();
+            var input = document.getElementById('settings-dir-input');
+            if (input) input.click();
         } else {
             var response = await fetch('/api/select-directory');
             if (!response.ok) throw new Error('Network error selecting folder');
             var data = await response.json();
-            folderPath = data.path;
-        }
-
-        if (folderPath) {
-            try {
-                localStorage.setItem('custom-dir', folderPath);
-                localStorage.setItem('last-dir', folderPath);
-            } catch (e) {}
-            setOutputDir(folderPath);
-            var settingsDirEl = document.getElementById('settings-dir-path');
-            if (settingsDirEl) {
-                settingsDirEl.textContent = folderPath;
+            var folderPath = data.path;
+            if (folderPath) {
+                try {
+                    localStorage.setItem('custom-dir', folderPath);
+                    localStorage.setItem('last-dir', folderPath);
+                } catch (e) {}
+                setOutputDir(folderPath);
+                var settingsDirEl = document.getElementById('settings-dir-path');
+                if (settingsDirEl) {
+                    settingsDirEl.textContent = folderPath;
+                }
+                addLog(getTranslation('log_custom_folder_set', 'Custom default folder set to: ') + folderPath);
             }
-            addLog(getTranslation('log_custom_folder_set', 'Custom default folder set to: ') + folderPath);
         }
     } catch (err) {
         addLog('[Error] ' + getTranslation('log_failed_select_default_dir', 'Failed to select default directory: ') + err.message);
@@ -1129,6 +1125,45 @@ window.addEventListener('DOMContentLoaded', async () => {
 
         // Resolve output directory configuration
         await initOutputDirectory();
+    }
+
+    // Register change event listener for the home page directory selection input
+    var dirInput = document.getElementById('dir-input');
+    if (dirInput) {
+        dirInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files.length > 0) {
+                var folderPath = e.target.files[0].path;
+                if (folderPath) {
+                    setOutputDir(folderPath);
+                    try {
+                        localStorage.setItem('last-dir', folderPath);
+                    } catch (err) {}
+                    addLog(getTranslation('log_output_folder_set', 'Output folder set to: ') + folderPath);
+                }
+            }
+        });
+    }
+
+    // Register change event listener for the settings page directory selection input
+    var settingsDirInput = document.getElementById('settings-dir-input');
+    if (settingsDirInput) {
+        settingsDirInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files.length > 0) {
+                var folderPath = e.target.files[0].path;
+                if (folderPath) {
+                    try {
+                        localStorage.setItem('custom-dir', folderPath);
+                        localStorage.setItem('last-dir', folderPath);
+                    } catch (err) {}
+                    setOutputDir(folderPath);
+                    var settingsDirEl = document.getElementById('settings-dir-path');
+                    if (settingsDirEl) {
+                        settingsDirEl.textContent = folderPath;
+                    }
+                    addLog(getTranslation('log_custom_folder_set', 'Custom default folder set to: ') + folderPath);
+                }
+            }
+        });
     }
 
     // Initialize custom styled dropdowns
