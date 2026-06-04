@@ -1,6 +1,7 @@
-# IVIDS YouTube MP3 Playlist Downloader
+# IVIDS YouTube MP3 Playlist Downloader v0.0.1
 
-A premium, modern, and beautiful YouTube audio downloader application. Featuring a high-performance backend and a unified glassmorphism UI designed for visual excellence.
+Welcome to the first official release of the IVIDS YouTube MP3 Playlist Downloader! 
+A premium, modern, and beautiful YouTube audio downloader application. Featuring a high-performance backend and a unified glassmorphism UI designed for visual excellence. This application allows you to easily download your favorite YouTube playlists and individual tracks as MP3s with a sleek and dynamic user experience.
 
 This project supports **three parallel pathways** for accessing the downloader:
 1. 🐍 **Python Server (`StartUp.py`)**: Runs a lightweight HTTP server serving local files and exposing REST API/SSE streaming for downloads. Accessible from any local/mobile browser (`http://localhost:8080`).
