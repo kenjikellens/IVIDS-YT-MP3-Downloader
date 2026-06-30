@@ -1815,10 +1815,16 @@ html, body {
 }
 
 /* 
- * Limits the options height specifically for the simultaneous downloads select options dropdown,
- * ensuring a scrollbar is shown even when fewer items are generated.
+ * Positions the concurrency select options container to open upwards
+ * since it is located at the very bottom of the settings page.
+ * Capping the max-height ensures that an internal scrollbar is displayed 
+ * inside the dropdown options container, avoiding vertical overflow page scrollbars.
  */
 .settings-concurrency-custom .custom-select-options {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 4px;
     max-height: 120px;
 }
 

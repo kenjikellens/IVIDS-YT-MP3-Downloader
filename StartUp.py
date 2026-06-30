@@ -356,7 +356,7 @@ class DownloadManager:
                     data = json.loads(line)
                     if "id" in data and "title" in data:
                         tracks.append({
-                            "title": data["title"],
+                            "title": data.get("title") or data.get("id") or "Unknown Video",
                             "id": data["id"],
                             "duration": data.get("duration"),
                             "channel": data.get("channel") or data.get("uploader") or "Unknown Channel"
@@ -383,7 +383,7 @@ class DownloadManager:
                     data = json.loads(stdout)
                     if "id" in data and "title" in data:
                         tracks.append({
-                            "title": data["title"],
+                            "title": data.get("title") or data.get("id") or "Unknown Video",
                             "id": data["id"],
                             "duration": data.get("duration"),
                             "channel": data.get("channel") or data.get("uploader") or "Unknown Channel"

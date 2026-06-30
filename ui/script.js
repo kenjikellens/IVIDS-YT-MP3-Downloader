@@ -587,10 +587,8 @@ function startDownload() {
     if (activeProgressContainer) activeProgressContainer.innerHTML = '';
     addLog(getTranslation('log_init_job', 'Initializing download job...'));
 
-    var savedConcurrency = 1;
-    try {
-        savedConcurrency = parseInt(localStorage.getItem('app-concurrency')) || 1;
-    } catch (e) {}
+    var concurrencySelect = document.getElementById('settings-concurrency');
+    var concurrency = concurrencySelect ? parseInt(concurrencySelect.value) || 1 : 1;
 
     var options = {
         url: url,
@@ -602,7 +600,7 @@ function startDownload() {
         startIdx: 1,
         endIdx: -1,
         selectedIds: selectedIds,
-        concurrency: savedConcurrency
+        concurrency: concurrency
     };
 
     var isElectron = !!window.electronAPI;
