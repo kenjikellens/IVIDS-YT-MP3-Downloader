@@ -190,16 +190,42 @@ class DownloadManager:
 
     def resolve_yt_dlp(self):
         """
-        Locates yt-dlp.exe. Checks locally, in the system path, and downloads if missing.
+        Locates and updates yt-dlp.exe. Checks locally, in the system path, and downloads if missing.
+        Automatically triggers the internal update command of yt-dlp to ensure it is always
+        running the latest version to maintain compatibility with YouTube changes.
         
         :return: Path to yt-dlp executable
         """
         local_path = os.path.join(base_dir, "yt-dlp.exe")
         if os.path.exists(local_path):
+            self.sse_callback("status", {"status": "Setup...", "track": "Updating yt-dlp"})
+            self.sse_callback("log", "Checking and updating local yt-dlp executable...")
+            try:
+                startupinfo = None
+                if sys.platform == 'win32':
+                    startupinfo = subprocess.STARTUPINFO()
+                    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                # Execute yt-dlp built-in update command
+                proc = subprocess.run([local_path, "--update"], capture_output=True, text=True, startupinfo=startupinfo)
+                if proc.returncode == 0:
+                    self.sse_callback("log", "yt-dlp update check complete (latest version or updated successfully).")
+                else:
+                    self.sse_callback("log", f"[Warning] yt-dlp update process returned non-zero code: {proc.stderr.strip()}")
+            except Exception as e:
+                self.sse_callback("log", f"[Warning] Could not update local yt-dlp executable: {str(e)}")
             return local_path
 
         # Check system PATH
         if self.is_command_available(["yt-dlp", "--version"]):
+            # Attempt to update system yt-dlp as well, silencing errors if it lacks write permission
+            try:
+                startupinfo = None
+                if sys.platform == 'win32':
+                    startupinfo = subprocess.STARTUPINFO()
+                    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                subprocess.run(["yt-dlp", "--update"], capture_output=True, startupinfo=startupinfo)
+            except:
+                pass
             return "yt-dlp"
 
         # Download from GitHub

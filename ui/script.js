@@ -378,7 +378,9 @@ async function loadMetadata() {
 
     // Switch previews panel states to empty/loading placeholder
     showPreviewState('empty');
-    document.getElementById('state-empty').innerHTML = '<p>' + getTranslation('preview_loading', 'Loading tracks metadata...') + '</p>';
+    document.getElementById('state-empty').innerHTML = 
+        '<div class="spinner"></div>' +
+        '<p>' + getTranslation('preview_loading', 'Loading tracks metadata...') + '</p>';
 
     try {
         var isElectron = !!window.electronAPI;
