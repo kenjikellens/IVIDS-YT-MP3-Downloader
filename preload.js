@@ -68,6 +68,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onProgress: (callback) => ipcRenderer.on('progress', (_event, percent) => callback(percent)),
 
     /**
+     * Registers a callback listener for individual track progress updates.
+     * @param {function(Object)} callback - Receives dict with id, title, and percent
+     */
+    onTrackProgress: (callback) => ipcRenderer.on('track-progress', (_event, data) => callback(data)),
+
+    /**
      * Registers a callback listener for download track title shifts.
      * @param {function(Object)} callback - Receives dict with status and track title
      */

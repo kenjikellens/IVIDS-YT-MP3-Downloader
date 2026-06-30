@@ -100,6 +100,9 @@ ipcMain.on('start-download', (event, options) => {
         onProgress: (percent) => {
             mainWindow?.webContents.send('progress', percent);
         },
+        onTrackProgress: (id, title, percent) => {
+            mainWindow?.webContents.send('track-progress', { id, title, percent });
+        },
         onStatusChange: (status, track) => {
             mainWindow?.webContents.send('status', { status, track });
         },

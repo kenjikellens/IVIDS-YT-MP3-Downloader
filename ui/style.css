@@ -1732,3 +1732,94 @@ html, body {
     }
 }
 
+/* 
+ * Active progress container listing individual concurrent downloads.
+ * Uses a flexbox layout with custom gap to list active items dynamically.
+ */
+.active-progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+/* 
+ * Individual download progress block card structure.
+ */
+.track-progress-block {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+
+/* 
+ * Light theme variant background overrides for the track progress card.
+ */
+.light-theme .track-progress-block {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+/* 
+ * Track titles and percentage texts container.
+ */
+.track-progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 11px;
+}
+
+/* 
+ * Text layout for active download filenames.
+ */
+.track-progress-title {
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80%;
+}
+
+/* 
+ * Individual track progress percentage status indicator.
+ */
+.track-progress-percent {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+}
+
+/* 
+ * Visual track-specific progress bar backing slot.
+ */
+.track-progress-bar-container {
+    height: 4px;
+    background-color: var(--border-default);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+/* 
+ * Visual progress level indicator track fill.
+ */
+.track-progress-bar-fill {
+    height: 100%;
+    background-color: var(--bg-download);
+    width: 0%;
+    transition: width 0.15s ease-out;
+}
+
+/* 
+ * Limits the options height specifically for the simultaneous downloads select options dropdown,
+ * ensuring a scrollbar is shown even when fewer items are generated.
+ */
+.settings-concurrency-custom .custom-select-options {
+    max-height: 120px;
+}
+
+

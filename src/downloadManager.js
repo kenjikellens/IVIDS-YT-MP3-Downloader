@@ -38,6 +38,9 @@ class DownloadManager {
         this.selectedIds = options.selectedIds || null;
         this.concurrency = options.concurrency || 1;
         this.listener = listener;
+        if (!this.listener.onTrackProgress) {
+            this.listener.onTrackProgress = () => {};
+        }
 
         this.cancelled = false;
         this.activeProcesses = new Set();
@@ -432,6 +435,7 @@ class DownloadManager {
                         const trackPercent = parseFloat(match[1]);
                         this.progressMap[track.id] = trackPercent;
                         this.updateOverallProgress(totalItems);
+                        this.listener.onTrackProgress(track.id, track.title, trackPercent);
                     }
                     if (line.startsWith('[download]') || line.startsWith('[ffmpeg]')) {
                         this.listener.onLog(line.trim());
@@ -449,10 +453,12 @@ class DownloadManager {
                 if (code !== 0 && !this.cancelled) {
                     this.progressMap[track.id] = 100;
                     this.updateOverallProgress(totalItems);
+                    this.listener.onTrackProgress(track.id, track.title, 100);
                     reject(new Error(`yt-dlp exited with error code ${code}`));
                 } else {
                     this.progressMap[track.id] = 100;
                     this.updateOverallProgress(totalItems);
+                    this.listener.onTrackProgress(track.id, track.title, 100);
                     resolve();
                 }
             });
@@ -461,6 +467,7 @@ class DownloadManager {
                 this.activeProcesses.delete(proc);
                 this.progressMap[track.id] = 100;
                 this.updateOverallProgress(totalItems);
+                this.listener.onTrackProgress(track.id, track.title, 100);
                 reject(err);
             });
         });

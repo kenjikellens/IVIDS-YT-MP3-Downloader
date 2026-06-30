@@ -583,6 +583,8 @@ function startDownload() {
     if (consoleElement) consoleElement.innerHTML = '';
 
     setProgress(0);
+    var activeProgressContainer = document.getElementById('active-progress-container');
+    if (activeProgressContainer) activeProgressContainer.innerHTML = '';
     addLog(getTranslation('log_init_job', 'Initializing download job...'));
 
     var savedConcurrency = 1;
@@ -647,6 +649,13 @@ function startDownload() {
             } catch (err) {}
         });
 
+        source.addEventListener('track-progress', function(e) {
+            try {
+                var data = JSON.parse(e.data);
+                updateTrackProgress(data.id, data.title, data.percent);
+            } catch (err) {}
+        });
+
         source.addEventListener('complete', function(e) {
             try {
                 var data = JSON.parse(e.data);
@@ -693,6 +702,47 @@ function setProgress(percent) {
     var fill = document.getElementById('progress-fill');
     if (fill) {
         fill.style.width = percent + '%';
+    }
+}
+
+/**
+ * Updates or creates an individual track's progress bar in the progress section.
+ * 
+ * @param {string} id - The unique YouTube video ID
+ * @param {string} title - The track title
+ * @param {number} percent - The download/processing percentage (0 - 100)
+ */
+function updateTrackProgress(id, title, percent) {
+    var container = document.getElementById('active-progress-container');
+    if (!container) return;
+
+    var pct = Math.min(100, Math.max(0, Math.round(percent || 0)));
+    var blockId = 'pb-' + id;
+    var block = document.getElementById(blockId);
+
+    if (!block) {
+        block = document.createElement('div');
+        block.className = 'track-progress-block';
+        block.id = blockId;
+        block.innerHTML = 
+            '<div class="track-progress-info">' +
+                '<span class="track-progress-title">' + title + '</span>' +
+                '<span class="track-progress-percent" id="pct-' + id + '">0%</span>' +
+            '</div>' +
+            '<div class="track-progress-bar-container">' +
+                '<div class="track-progress-bar-fill" id="fill-' + id + '" style="width: 0%;"></div>' +
+            '</div>';
+        container.appendChild(block);
+    }
+
+    var fill = document.getElementById('fill-' + id);
+    var text = document.getElementById('pct-' + id);
+
+    if (fill) {
+        fill.style.width = pct + '%';
+    }
+    if (text) {
+        text.textContent = pct + '%';
     }
 }
 
@@ -1065,9 +1115,27 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Load initial concurrency (multidownload) preference
     var concurrencySelect = document.getElementById('settings-concurrency');
     if (concurrencySelect) {
+        // Calculate max allowed concurrency based on system threads (half of threads, capped to 8)
+        var threads = navigator.hardwareConcurrency || 4;
+        var maxConcurrency = Math.max(1, Math.min(8, Math.floor(threads / 2)));
+
+        // Populate select element options dynamically
+        concurrencySelect.innerHTML = '';
+        for (var i = 1; i <= maxConcurrency; i++) {
+            var opt = document.createElement('option');
+            opt.value = i.toString();
+            opt.textContent = i.toString();
+            concurrencySelect.appendChild(opt);
+        }
+
         var savedConcurrency = '1';
         try {
             savedConcurrency = localStorage.getItem('app-concurrency') || '1';
+            // Cap saved preference to max concurrency
+            if (parseInt(savedConcurrency) > maxConcurrency) {
+                savedConcurrency = maxConcurrency.toString();
+                localStorage.setItem('app-concurrency', savedConcurrency);
+            }
         } catch (e) {}
         concurrencySelect.value = savedConcurrency;
 
@@ -1114,6 +1182,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         // Register main process callback receivers
         window.electronAPI.onLog((msg) => addLog(msg));
         window.electronAPI.onProgress((percent) => setProgress(percent));
+        window.electronAPI.onTrackProgress((data) => updateTrackProgress(data.id, data.title, data.percent));
         window.electronAPI.onStatus((data) => setStatus(data.status, data.track));
         window.electronAPI.onComplete((data) => onComplete(data.success, data.errorMsg));
 
@@ -1188,6 +1257,9 @@ function initializeCustomSelects() {
 
         var customSelect = document.createElement('div');
         customSelect.className = 'custom-select';
+        if (select.id) {
+            customSelect.classList.add(select.id + '-custom');
+        }
         
         var trigger = document.createElement('div');
         trigger.className = 'custom-select-trigger';
