@@ -747,18 +747,46 @@ function updateTrackProgress(id, title, percent) {
     }
 
     if (!block) {
+        var trackData = loadedTracks ? loadedTracks.find(t => t.id === id) : null;
+        var channel = trackData && trackData.channel ? trackData.channel : 'Unknown Channel';
+        var durationText = trackData && trackData.duration ? formatDuration(trackData.duration) : '0:00';
+        
+        var mediaTypeSelect = document.getElementById('media-type-select');
+        var mediaType = mediaTypeSelect ? mediaTypeSelect.value : 'audio';
+        
+        var formatSelect = document.getElementById(mediaType === 'audio' ? 'format-select' : 'video-format');
+        var qualitySelect = document.getElementById(mediaType === 'audio' ? 'quality-select' : 'video-quality');
+        var format = formatSelect ? formatSelect.value : (mediaType === 'audio' ? 'mp3' : 'mp4');
+        var quality = qualitySelect ? qualitySelect.value : (mediaType === 'audio' ? '192k' : 'best');
+        
+        var qualityStr = quality;
+        if (mediaType === 'audio' && !quality.endsWith('k') && !quality.endsWith('bps') && quality !== 'best') {
+            qualityStr += 'kbps';
+        } else if (mediaType === 'video' && quality !== 'best' && !quality.endsWith('p')) {
+            qualityStr += 'p';
+        }
+        
+        var metaString = durationText + ' (' + qualityStr + ') ' + format;
+        if (quality === 'best') metaString = durationText + ' (best) ' + format;
+
         block = document.createElement('div');
         block.className = 'track-progress-block';
         block.id = blockId;
         block.innerHTML = 
-            '<span class="track-progress-title">' + title + '</span>' +
-            '<div class="track-progress-circle-wrapper">' +
-                '<svg class="track-progress-circle" viewBox="0 0 36 36">' +
-                    '<path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />' +
-                    '<path class="circle-fill" id="fill-circle-' + id + '" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />' +
-                    '<path class="checkmark-path" d="M12 18 l4 4 l8 -8" />' +
-                    '<path class="cross-path" d="M12 12 l12 12 M24 12 l-12 12" />' +
-                '</svg>' +
+            '<div class="track-progress-info">' +
+                '<span class="track-progress-title">' + title + '</span>' +
+                '<span class="track-progress-artist">' + channel + '</span>' +
+            '</div>' +
+            '<div class="track-progress-right">' +
+                '<span class="track-progress-meta">' + metaString + '</span>' +
+                '<div class="track-progress-circle-wrapper">' +
+                    '<svg class="track-progress-circle" viewBox="0 0 36 36">' +
+                        '<path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />' +
+                        '<path class="circle-fill" id="fill-circle-' + id + '" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />' +
+                        '<path class="checkmark-path" d="M12 18 l4 4 l8 -8" />' +
+                        '<path class="cross-path" d="M12 12 l12 12 M24 12 l-12 12" />' +
+                    '</svg>' +
+                '</div>' +
             '</div>';
         container.appendChild(block);
     }

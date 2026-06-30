@@ -1800,32 +1800,64 @@ html, body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
+    padding: 12px 16px;
     gap: 12px;
-    border-bottom: 1px dashed var(--border-default);
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    margin-bottom: 8px;
     min-width: 0;
 }
 .track-progress-block:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
 }
 
 /* Light theme overrides */
 .light-theme .track-progress-block {
-    border-bottom-color: var(--border-default);
+    border-color: var(--border-default);
 }
 
 /* 
- * Text layout for active download filenames.
+ * Layout for track information
  */
+.track-progress-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
 .track-progress-title {
     font-weight: 500;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    flex: 1;
-    font-size: 12px;
+    font-size: 13px;
     min-width: 0;
+}
+
+.track-progress-artist {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.track-progress-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.track-progress-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
 }
 
 /* 
