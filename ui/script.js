@@ -1265,6 +1265,44 @@ window.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Load default startup audio quality
+    var startupAudioSelect = document.getElementById('settings-startup-audio-quality');
+    var homeAudioSelect = document.getElementById('quality-select');
+    var savedStartupAudio = '192k';
+    try {
+        savedStartupAudio = localStorage.getItem('app-startup-audio-quality') || '192k';
+    } catch (e) {}
+    if (homeAudioSelect) {
+        homeAudioSelect.value = savedStartupAudio;
+    }
+    if (startupAudioSelect) {
+        startupAudioSelect.value = savedStartupAudio;
+        startupAudioSelect.addEventListener('change', function() {
+            try {
+                localStorage.setItem('app-startup-audio-quality', startupAudioSelect.value);
+            } catch (e) {}
+        });
+    }
+
+    // Load default startup video quality
+    var startupVideoSelect = document.getElementById('settings-startup-video-quality');
+    var homeVideoSelect = document.getElementById('video-quality');
+    var savedStartupVideo = 'best';
+    try {
+        savedStartupVideo = localStorage.getItem('app-startup-video-quality') || 'best';
+    } catch (e) {}
+    if (homeVideoSelect) {
+        homeVideoSelect.value = savedStartupVideo;
+    }
+    if (startupVideoSelect) {
+        startupVideoSelect.value = savedStartupVideo;
+        startupVideoSelect.addEventListener('change', function() {
+            try {
+                localStorage.setItem('app-startup-video-quality', startupVideoSelect.value);
+            } catch (e) {}
+        });
+    }
+
     var isElectron = !!window.electronAPI;
     if (isElectron) {
         // Register titlebar buttons handlers

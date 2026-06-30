@@ -1885,7 +1885,9 @@ html, body {
 .track-progress-block.failed .track-progress-circle .cross-path {
     opacity: 1;
 }
-.settings-concurrency-custom .custom-select-options {
+.settings-concurrency-custom .custom-select-options,
+.settings-startup-audio-quality-custom .custom-select-options,
+.settings-startup-video-quality-custom .custom-select-options {
     top: auto;
     bottom: 100%;
     margin-top: 0;
