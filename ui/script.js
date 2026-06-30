@@ -733,14 +733,15 @@ function updateTrackProgress(id, title, percent) {
     var container = document.getElementById('active-progress-container');
     if (!container) return;
 
-    var pct = Math.min(100, Math.max(0, Math.round(percent || 0)));
+    var isFailed = percent === -1;
+    var pct = isFailed ? 100 : Math.min(100, Math.max(0, Math.round(percent || 0)));
     var blockId = 'pb-' + id;
     var block = document.getElementById(blockId);
 
-    // Track state transitions to 100%
+    // Track state transitions to 100% or failure
     var oldPct = activeTrackProgressMap[id] || 0;
     activeTrackProgressMap[id] = pct;
-    if (oldPct < 100 && pct === 100) {
+    if (oldPct < 100 && (pct === 100 || isFailed)) {
         completedQueueTracks = Math.min(totalQueueTracks, completedQueueTracks + 1);
         setStatus(currentStatusString);
     }
@@ -756,6 +757,7 @@ function updateTrackProgress(id, title, percent) {
                     '<path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />' +
                     '<path class="circle-fill" id="fill-circle-' + id + '" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />' +
                     '<path class="checkmark-path" d="M12 18 l4 4 l8 -8" />' +
+                    '<path class="cross-path" d="M12 12 l12 12 M24 12 l-12 12" />' +
                 '</svg>' +
             '</div>';
         container.appendChild(block);
@@ -766,10 +768,14 @@ function updateTrackProgress(id, title, percent) {
         circle.setAttribute('stroke-dasharray', pct + ', 100');
     }
 
-    if (pct === 100) {
+    if (isFailed) {
+        block.classList.remove('complete');
+        block.classList.add('failed');
+    } else if (pct === 100) {
+        block.classList.remove('failed');
         block.classList.add('complete');
     } else {
-        block.classList.remove('complete');
+        block.classList.remove('complete', 'failed');
     }
 }
 

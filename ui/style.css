@@ -1868,12 +1868,23 @@ html, body {
     opacity: 1;
 }
 
-/* 
- * Positions the concurrency select options container to open upwards
- * since it is located at the very bottom of the settings page.
- * Capping the max-height ensures that an internal scrollbar is displayed 
- * inside the dropdown options container, avoiding vertical overflow page scrollbars.
- */
+
+/* Red outline highlight for failed tracks */
+.track-progress-block.failed .track-progress-circle .circle-fill {
+    stroke: var(--accent-red);
+}
+.track-progress-circle .cross-path {
+    fill: none;
+    stroke: var(--accent-red);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+.track-progress-block.failed .track-progress-circle .cross-path {
+    opacity: 1;
+}
 .settings-concurrency-custom .custom-select-options {
     top: auto;
     bottom: 100%;

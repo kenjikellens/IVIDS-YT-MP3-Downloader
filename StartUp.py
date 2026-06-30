@@ -155,6 +155,7 @@ class DownloadManager:
                     active_titles.add(track["title"])
                 update_simultaneous_status()
 
+                success = False
                 try:
                     def track_progress_callback(percent):
                         update_progress(track["id"], percent)
@@ -163,6 +164,7 @@ class DownloadManager:
                     self.execute_track_download(yt_dlp_path, ffmpeg_path, track, idx, queue_size, progress_callback=track_progress_callback)
                     with progress_lock:
                         completed += 1
+                    success = True
                 except Exception as err:
                     if cancelled:
                         return
@@ -173,7 +175,7 @@ class DownloadManager:
                             active_titles.remove(track["title"])
                     update_simultaneous_status()
                     update_progress(track["id"], 100.0)
-                    self.sse_callback("track-progress", {"id": track["id"], "title": track["title"], "percent": 100.0})
+                    self.sse_callback("track-progress", {"id": track["id"], "title": track["title"], "percent": 100.0 if success else -1.0})
 
             from concurrent.futures import ThreadPoolExecutor
             with ThreadPoolExecutor(max_workers=concurrency_limit) as executor:

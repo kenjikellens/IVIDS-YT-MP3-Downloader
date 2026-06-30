@@ -453,7 +453,7 @@ class DownloadManager {
                 if (code !== 0 && !this.cancelled) {
                     this.progressMap[track.id] = 100;
                     this.updateOverallProgress(totalItems);
-                    this.listener.onTrackProgress(track.id, track.title, 100);
+                    this.listener.onTrackProgress(track.id, track.title, -1);
                     reject(new Error(`yt-dlp exited with error code ${code}`));
                 } else {
                     this.progressMap[track.id] = 100;
@@ -467,7 +467,7 @@ class DownloadManager {
                 this.activeProcesses.delete(proc);
                 this.progressMap[track.id] = 100;
                 this.updateOverallProgress(totalItems);
-                this.listener.onTrackProgress(track.id, track.title, 100);
+                this.listener.onTrackProgress(track.id, track.title, -1);
                 reject(err);
             });
         });
