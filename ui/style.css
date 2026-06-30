@@ -392,8 +392,8 @@ html, body {
 /* Responsive grid layout dividing main view into form, previews and logs */
 .app-layout {
     display: grid;
-    grid-template-columns: 1fr 1.2fr;
-    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    grid-template-rows: 1fr;
     gap: 16px;
     flex: 1;
     min-height: 0;
@@ -419,7 +419,7 @@ html, body {
 /* Metadata preview panel placement inside dashboard grid */
 .preview-panel {
     grid-column: 2;
-    grid-row: 1 / 3;
+    grid-row: 1;
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -428,11 +428,12 @@ html, body {
 
 /* Log console placement inside dashboard grid */
 .output-panel {
-    grid-column: 1;
-    grid-row: 2;
+    grid-column: 3;
+    grid-row: 1;
     display: flex;
     flex-direction: column;
     min-height: 0;
+    gap: 16px;
 }
 
 /* Structured layout row alignment grouping settings */
@@ -1468,9 +1469,33 @@ html, body {
     transition: left 0.2s ease;
 }
 
-/* Position adjustment for active dark mode theme state */
-.theme-switch.dark .theme-switch-handle {
+/* Position adjustment for active dark mode theme state or active toggles */
+.theme-switch.dark .theme-switch-handle,
+.theme-switch.active .theme-switch-handle {
     left: 28px;
+}
+
+/* Distinct visual design for the CLI toggle switch (off state) */
+#cli-switch:not(.active) {
+    background-color: var(--bg-button-secondary);
+    border-color: var(--border-default);
+}
+#cli-switch:not(.active) .theme-switch-handle {
+    background-color: var(--text-secondary);
+}
+
+/* Distinct visual design for the CLI toggle switch (on/active state) */
+#cli-switch.active {
+    background-color: var(--accent-green);
+    border-color: var(--accent-green);
+}
+#cli-switch.active .theme-switch-handle {
+    background-color: #ffffff;
+}
+
+/* Hide console when class is present */
+.hide-cli .console {
+    display: none !important;
 }
 
 /* Focus styles for keyboard accessibility on the theme switch */
@@ -1734,44 +1759,43 @@ html, body {
 
 /* 
  * Active progress container listing individual concurrent downloads.
- * Uses a flexbox layout with custom gap to list active items dynamically.
+ * Styled as a card, only visible when it contains active track items.
  */
 .active-progress-container {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 10px;
-    margin-bottom: 10px;
     max-height: 150px;
     overflow-y: auto;
+    flex: 1;
+}
+
+/* Hide active progress card completely when empty */
+.active-progress-container:empty {
+    display: none !important;
+}
+
+/* Allow the progress container to stretch completely when raw CLI is hidden */
+.hide-cli .active-progress-container {
+    max-height: none;
 }
 
 /* 
- * Individual download progress block card structure.
+ * Individual download progress block structure inside the container.
+ * Listed cleanly under each other as rows without card backgrounds.
  */
 .track-progress-block {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--border-default);
-    border-radius: 6px;
-    padding: 8px 10px;
-}
-
-/* 
- * Light theme variant background overrides for the track progress card.
- */
-.light-theme .track-progress-block {
-    background: rgba(0, 0, 0, 0.02);
-}
-
-/* 
- * Track titles and percentage texts container.
- */
-.track-progress-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
-    font-size: 11px;
+    padding: 8px 0;
+    gap: 12px;
+    border-bottom: 1px dashed var(--border-default);
+}
+.track-progress-block:last-child {
+    border-bottom: none;
+}
+
+/* Light theme overrides */
+.light-theme .track-progress-block {
+    border-bottom-color: var(--border-default);
 }
 
 /* 
@@ -1783,35 +1807,48 @@ html, body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 80%;
+    flex: 1;
+    font-size: 12px;
 }
 
 /* 
- * Individual track progress percentage status indicator.
+ * Circular progress ring wrapper and SVG styles.
  */
-.track-progress-percent {
-    font-family: var(--font-mono);
-    color: var(--text-muted);
+.track-progress-circle-wrapper {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-
-/* 
- * Visual track-specific progress bar backing slot.
- */
-.track-progress-bar-container {
-    height: 4px;
-    background-color: var(--border-default);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-/* 
- * Visual progress level indicator track fill.
- */
-.track-progress-bar-fill {
+.track-progress-circle {
+    width: 100%;
     height: 100%;
-    background-color: var(--bg-download);
-    width: 0%;
-    transition: width 0.15s ease-out;
+}
+.track-progress-circle .circle-bg {
+    fill: none;
+    stroke: var(--border-default);
+    stroke-width: 4;
+}
+.track-progress-circle .circle-fill {
+    fill: none;
+    stroke: var(--bg-download);
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.25s ease-out;
+}
+.track-progress-circle .checkmark-path {
+    fill: none;
+    stroke: var(--bg-download);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+.track-progress-block.complete .track-progress-circle .checkmark-path {
+    opacity: 1;
 }
 
 /* 

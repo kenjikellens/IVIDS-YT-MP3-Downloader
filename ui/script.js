@@ -18,6 +18,17 @@ var autoLoadDebounceTimer = null;
 /** @type {Object} The current language translation key-value mappings dictionary */
 var currentLocaleData = {};
 
+/** @type {number} Total tracks in active download job */
+var totalQueueTracks = 0;
+/** @type {number} Completed tracks in active download job */
+var completedQueueTracks = 0;
+/** @type {number} Overall percentage progress */
+var currentOverallProgressPercent = 0;
+/** @type {Object} Map of track ID to last progress percentage */
+var activeTrackProgressMap = {};
+/** @type {string} Last known status string */
+var currentStatusString = 'Idle';
+
 /**
  * Retrieves the translation string for a given key from the loaded locale dictionary.
  * Falls back to the provided default value if the key does not exist.
@@ -582,6 +593,12 @@ function startDownload() {
     }
     if (consoleElement) consoleElement.innerHTML = '';
 
+    totalQueueTracks = selectedIds.length > 0 ? selectedIds.length : (loadedTracks.length > 0 ? loadedTracks.length : 1);
+    completedQueueTracks = 0;
+    currentOverallProgressPercent = 0;
+    activeTrackProgressMap = {};
+    currentStatusString = 'Downloading';
+
     setProgress(0);
     var activeProgressContainer = document.getElementById('active-progress-container');
     if (activeProgressContainer) activeProgressContainer.innerHTML = '';
@@ -701,6 +718,8 @@ function setProgress(percent) {
     if (fill) {
         fill.style.width = percent + '%';
     }
+    currentOverallProgressPercent = Math.min(100, Math.max(0, Math.round(percent || 0)));
+    setStatus(currentStatusString);
 }
 
 /**
@@ -718,29 +737,39 @@ function updateTrackProgress(id, title, percent) {
     var blockId = 'pb-' + id;
     var block = document.getElementById(blockId);
 
+    // Track state transitions to 100%
+    var oldPct = activeTrackProgressMap[id] || 0;
+    activeTrackProgressMap[id] = pct;
+    if (oldPct < 100 && pct === 100) {
+        completedQueueTracks = Math.min(totalQueueTracks, completedQueueTracks + 1);
+        setStatus(currentStatusString);
+    }
+
     if (!block) {
         block = document.createElement('div');
         block.className = 'track-progress-block';
         block.id = blockId;
         block.innerHTML = 
-            '<div class="track-progress-info">' +
-                '<span class="track-progress-title">' + title + '</span>' +
-                '<span class="track-progress-percent" id="pct-' + id + '">0%</span>' +
-            '</div>' +
-            '<div class="track-progress-bar-container">' +
-                '<div class="track-progress-bar-fill" id="fill-' + id + '" style="width: 0%;"></div>' +
+            '<span class="track-progress-title">' + title + '</span>' +
+            '<div class="track-progress-circle-wrapper">' +
+                '<svg class="track-progress-circle" viewBox="0 0 36 36">' +
+                    '<path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />' +
+                    '<path class="circle-fill" id="fill-circle-' + id + '" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />' +
+                    '<path class="checkmark-path" d="M12 18 l4 4 l8 -8" />' +
+                '</svg>' +
             '</div>';
         container.appendChild(block);
     }
 
-    var fill = document.getElementById('fill-' + id);
-    var text = document.getElementById('pct-' + id);
-
-    if (fill) {
-        fill.style.width = pct + '%';
+    var circle = document.getElementById('fill-circle-' + id);
+    if (circle) {
+        circle.setAttribute('stroke-dasharray', pct + ', 100');
     }
-    if (text) {
-        text.textContent = pct + '%';
+
+    if (pct === 100) {
+        block.classList.add('complete');
+    } else {
+        block.classList.remove('complete');
     }
 }
 
@@ -752,41 +781,51 @@ function setStatus(status, track) {
     var statusText = document.getElementById('status-text');
     var trackText = document.getElementById('track-text');
     
-    var translatedStatus = status;
-    if (status === 'Idle') {
-        translatedStatus = getTranslation('status_idle', 'Idle');
-    } else if (status === 'Querying URL...') {
-        translatedStatus = getTranslation('status_querying', 'Querying URL...');
-    } else if (status === 'Setup...') {
-        translatedStatus = getTranslation('status_setup', 'Setup...');
-    } else if (status === 'Completed') {
-        translatedStatus = getTranslation('status_completed', 'Completed');
-    } else if (status === 'Failed') {
-        translatedStatus = getTranslation('status_failed', 'Failed');
-    } else if (status && status.startsWith('Downloading track ')) {
-        var match = status.match(/Downloading track (\d+) of (\d+)/);
-        if (match) {
-            var current = match[1];
-            var total = match[2];
-            var template = getTranslation('status_downloading_track', 'Downloading track {current} of {total}');
-            translatedStatus = template.replace('{current}', current).replace('{total}', total);
-        } else {
-            translatedStatus = getTranslation('status_downloading', 'Downloading');
-        }
+    if (status) {
+        currentStatusString = status;
     }
     
-    var translatedTrack = track;
-    if (track === 'Finished!') {
-        translatedTrack = getTranslation('status_finished', 'Finished!');
-    } else if (track === 'Downloading yt-dlp') {
-        translatedTrack = getTranslation('status_downloading_ytdlp', 'Downloading yt-dlp');
+    // 1. Resolve localized status label for the left side
+    var translatedStatus = currentStatusString;
+    if (currentStatusString === 'Idle') {
+        translatedStatus = getTranslation('status_idle', 'Idle');
+    } else if (currentStatusString === 'Querying URL...') {
+        translatedStatus = getTranslation('status_querying', 'Querying URL...');
+    } else if (currentStatusString === 'Setup...') {
+        translatedStatus = getTranslation('status_setup', 'Setup...');
+    } else if (currentStatusString === 'Completed') {
+        translatedStatus = getTranslation('status_completed', 'Completed');
+    } else if (currentStatusString === 'Failed') {
+        translatedStatus = getTranslation('status_failed', 'Failed');
+    } else if (currentStatusString && (currentStatusString.startsWith('Downloading track ') || currentStatusString.startsWith('Downloading'))) {
+        translatedStatus = getTranslation('status_downloading', 'Downloading');
+    }
+    
+    // 2. Formatting the right side (track count and percentage)
+    var rightText = '';
+    
+    // Handle special intermediate setup actions or tasks on the right side
+    if (track === 'Downloading yt-dlp') {
+        rightText = getTranslation('status_downloading_ytdlp', 'Downloading yt-dlp');
     } else if (track === 'Downloading FFmpeg') {
-        translatedTrack = getTranslation('status_downloading_ffmpeg', 'Downloading FFmpeg');
+        rightText = getTranslation('status_downloading_ffmpeg', 'Downloading FFmpeg');
+    } else if (currentStatusString === 'Completed') {
+        // When finished, show all completed with 100%
+        rightText = totalQueueTracks + '/' + totalQueueTracks + ' (100%)';
+    } else if (currentStatusString === 'Failed') {
+        rightText = '';
+    } else if (currentStatusString === 'Idle') {
+        rightText = '';
+    } else if (currentStatusString === 'Querying URL...' || currentStatusString === 'Setup...') {
+        rightText = '';
+    } else {
+        // Actively downloading: show dynamic completed / total count and aggregated percentage
+        rightText = completedQueueTracks + '/' + totalQueueTracks + ' (' + currentOverallProgressPercent + '%)';
     }
     
     var prefix = getTranslation('status_prefix', 'Status: ');
     if (statusText) statusText.textContent = prefix + translatedStatus;
-    if (trackText) trackText.textContent = translatedTrack;
+    if (trackText) trackText.textContent = rightText;
 }
 
 /**
@@ -1084,6 +1123,60 @@ window.addEventListener('DOMContentLoaded', async () => {
         savedTheme = localStorage.getItem('app-theme') || 'dark';
     } catch (e) {}
     changeTheme(savedTheme);
+
+    // Load initial CLI logs visibility preference
+    var cliSwitch = document.getElementById('cli-switch');
+    if (cliSwitch) {
+        var savedCli = 'false';
+        try {
+            savedCli = localStorage.getItem('app-show-cli') || 'false';
+        } catch (e) {}
+
+        if (savedCli === 'true') {
+            cliSwitch.classList.add('active');
+            cliSwitch.setAttribute('aria-checked', 'true');
+            cliSwitch.title = 'Hide Console Logs';
+            document.body.classList.remove('hide-cli');
+        } else {
+            cliSwitch.classList.remove('active');
+            cliSwitch.setAttribute('aria-checked', 'false');
+            cliSwitch.title = 'Show Console Logs';
+            document.body.classList.add('hide-cli');
+        }
+
+        /**
+         * Toggles the raw console logs (CLI) visibility.
+         * Updates the UI switch state, writes state to localStorage, and updates document.body class list.
+         */
+        var toggleCli = function() {
+            var isCurrentlyShown = cliSwitch.classList.contains('active');
+            if (isCurrentlyShown) {
+                cliSwitch.classList.remove('active');
+                cliSwitch.setAttribute('aria-checked', 'false');
+                cliSwitch.title = 'Show Console Logs';
+                document.body.classList.add('hide-cli');
+                try {
+                    localStorage.setItem('app-show-cli', 'false');
+                } catch (e) {}
+            } else {
+                cliSwitch.classList.add('active');
+                cliSwitch.setAttribute('aria-checked', 'true');
+                cliSwitch.title = 'Hide Console Logs';
+                document.body.classList.remove('hide-cli');
+                try {
+                    localStorage.setItem('app-show-cli', 'true');
+                } catch (e) {}
+            }
+        };
+
+        cliSwitch.addEventListener('click', toggleCli);
+        cliSwitch.addEventListener('keydown', function(e) {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                toggleCli();
+            }
+        });
+    }
 
     // Hook up Settings Default Folder browse trigger
     var btnSettingsBrowse = document.getElementById('btn-settings-browse');

@@ -216,18 +216,25 @@
                         </div>
                     </section>
 
-                    <!-- Bottom-Left: Console CLI log panel -->
-                    <section class="card output-panel" id="progress-section">
-                        <div class="progress-header">
-                            <span class="status-text" id="status-text" data-i18n="console_status_idle">Status: Idle</span>
-                            <span class="track-text" id="track-text"></span>
-                        </div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="active-progress-container" id="active-progress-container"></div>
+                    <!-- Right: Progress column containing status cards, active downloads, and console logs -->
+                    <div class="output-panel" id="progress-section">
+                        <!-- Overall Status Card -->
+                        <section class="card overall-status-card">
+                            <div class="progress-header">
+                                <span class="status-text" id="status-text" data-i18n="console_status_idle">Status: Idle</span>
+                                <span class="track-text" id="track-text"></span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="progress-fill"></div>
+                            </div>
+                        </section>
+
+                        <!-- Songs progress card (only visible during playlist downloads) -->
+                        <section class="card active-progress-container" id="active-progress-container"></section>
+
+                        <!-- Console Logs card -->
                         <div class="console" id="console" role="log"></div>
-                    </section>
+                    </div>
                 </div>
             </div>
 
@@ -343,6 +350,23 @@
                                             <option value="4">4</option>
                                             <option value="5">5</option>
                                         </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="settings-section">
+                            <h2 class="settings-section-title" data-i18n="settings_advanced_section">Advanced Settings</h2>
+                            <div class="card settings-card">
+                                <div class="form-row settings-row">
+                                    <div class="settings-info">
+                                        <label class="settings-label" data-i18n="settings_cli_label">Show Console Logs (CLI)</label>
+                                        <span class="settings-desc" data-i18n="settings_cli_desc">Show raw download logs in the progress section.</span>
+                                    </div>
+                                    <div class="theme-toggle-container">
+                                        <div class="theme-switch" id="cli-switch" role="checkbox" aria-checked="false" tabindex="0" title="Toggle CLI Logs" aria-label="Toggle Console Logs">
+                                            <div class="theme-switch-handle"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
