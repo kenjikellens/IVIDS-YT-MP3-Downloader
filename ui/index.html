@@ -14,7 +14,7 @@
     <script type="importmap">
     {
       "imports": {
-        "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        "@google/genai": "https://esm.run/@google/genai"
       }
     }
     </script>
@@ -237,9 +237,12 @@
                     <!-- Right: Progress column containing status cards, active downloads, and console logs -->
                     <div class="output-panel" id="progress-section">
                         <!-- Overall Status Card -->
-                        <section class="card overall-status-card">
+                        <section class="card overall-status-card status-idle">
                             <div class="progress-header">
-                                <span class="status-text" id="status-text" data-i18n="console_status_idle">Status: Idle</span>
+                                <div class="status-left-group">
+                                    <span class="status-dot" id="status-dot"></span>
+                                    <span class="status-text" id="status-text" data-i18n="console_status_idle">Status: Idle</span>
+                                </div>
                                 <span class="track-text" id="track-text"></span>
                             </div>
                             <div class="progress-bar-container">
@@ -304,7 +307,28 @@
                         </div>
                     </section>
 
-                    <!-- Middle: Preview/Results panel -->
+                    <!-- Middle: Organiser Status and Logs -->
+                    <div class="output-panel" id="organiser-progress-section">
+                        <!-- Overall Organiser Status Card -->
+                        <section class="card overall-status-card status-idle" id="organiser-status-card">
+                            <div class="progress-header">
+                                <div class="status-left-group">
+                                    <span class="status-dot"></span>
+                                    <span class="status-text" id="organiser-status-text" data-i18n="console_status_idle">Status: Idle</span>
+                                </div>
+                                <span class="status-number-container" id="organiser-track-text"></span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="organiser-progress-fill"></div>
+                            </div>
+                            <!-- Nested container for active track organization loaders -->
+                            <div class="active-progress-container" id="organiser-active-progress"></div>
+                        </section>
+                        <!-- Organiser Console Logs card -->
+                        <div class="console" id="organiser-console" role="log" style="flex: 1;"></div>
+                    </div>
+
+                    <!-- Right: Preview/Results panel -->
                     <section class="card preview-panel" id="organiser-preview-panel">
                         <div class="preview-header">
                             <span class="preview-title" data-i18n="organiser_results_title">Results</span>
@@ -318,11 +342,6 @@
                             </div>
                         </div>
                     </section>
-
-                    <!-- Right: Console logs -->
-                    <div class="output-panel" id="organiser-progress-section">
-                        <div class="console" id="organiser-console" role="log" style="flex: 1;"></div>
-                    </div>
                 </div>
             </div>
 

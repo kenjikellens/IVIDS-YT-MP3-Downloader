@@ -810,8 +810,12 @@ function updateTrackProgress(id, title, percent) {
 }
 
 /**
- * Updates the status header text and active track labels using translated terms.
+ * Updates the overall status container state, status header text, active track labels,
+ * and handles adding CSS state classes to the status card for visual theme changes.
  * Resolves localized status phrases and prefixes according to the current locale.
+ * 
+ * @param {string} status - The general state status string (e.g. 'Idle', 'Downloading')
+ * @param {string} track - Additional contextual info text or track name
  */
 function setStatus(status, track) {
     var statusText = document.getElementById('status-text');
@@ -862,6 +866,27 @@ function setStatus(status, track) {
     var prefix = getTranslation('status_prefix', 'Status: ');
     if (statusText) statusText.textContent = prefix + translatedStatus;
     if (trackText) trackText.textContent = rightText;
+
+    // 3. Update the overall status card's CSS class to match the active state.
+    // This allows dynamically modifying borders, background gradients, glowing box shadows, 
+    // and status dot colors/pulse rates based on what action is currently executing.
+    var overallCard = document.querySelector('.overall-status-card');
+    if (overallCard) {
+        overallCard.classList.remove('status-idle', 'status-querying', 'status-setup', 'status-downloading', 'status-completed', 'status-failed');
+        if (currentStatusString === 'Idle') {
+            overallCard.classList.add('status-idle');
+        } else if (currentStatusString === 'Querying URL...') {
+            overallCard.classList.add('status-querying');
+        } else if (currentStatusString === 'Setup...') {
+            overallCard.classList.add('status-setup');
+        } else if (currentStatusString === 'Completed') {
+            overallCard.classList.add('status-completed');
+        } else if (currentStatusString === 'Failed') {
+            overallCard.classList.add('status-failed');
+        } else {
+            overallCard.classList.add('status-downloading');
+        }
+    }
 }
 
 /**
@@ -1686,6 +1711,30 @@ async function startOrganiser() {
     var consoleEl = document.getElementById('organiser-console');
     if (consoleEl) consoleEl.innerHTML = '';
 
+    // Clear active track loaders container on start
+    var activeProgress = document.getElementById('organiser-active-progress');
+    if (activeProgress) activeProgress.innerHTML = '';
+
+    // Initialize overall organiser status card states and values
+    var organiserCard = document.getElementById('organiser-status-card');
+    var organiserStatusText = document.getElementById('organiser-status-text');
+    var organiserTrackText = document.getElementById('organiser-track-text');
+    var organiserProgressFill = document.getElementById('organiser-progress-fill');
+
+    if (organiserCard) {
+        organiserCard.classList.remove('status-idle', 'status-querying', 'status-setup', 'status-downloading', 'status-completed', 'status-failed');
+        organiserCard.classList.add('status-setup');
+    }
+    if (organiserStatusText) {
+        organiserStatusText.textContent = getTranslation('status_setup', 'Setup...');
+    }
+    if (organiserTrackText) {
+        organiserTrackText.textContent = '';
+    }
+    if (organiserProgressFill) {
+        organiserProgressFill.style.width = '0%';
+    }
+
     connectOrganiserLogStream();
 
     try {
@@ -1700,12 +1749,27 @@ async function startOrganiser() {
         if (scanData.error) throw new Error(scanData.error);
 
         var files = scanData.files || [];
+        if (organiserTrackText) organiserTrackText.textContent = `0 / ${files.length}`;
         if (trackCount) trackCount.textContent = `0 / ${files.length} items processed`;
         
         if (files.length === 0) {
             if (resultsList) resultsList.innerHTML = "<div class='organiser-result-item'>No new files found.</div>";
             finishOrganiser();
+            if (organiserCard) {
+                organiserCard.classList.remove('status-setup');
+                organiserCard.classList.add('status-idle');
+            }
+            if (organiserStatusText) organiserStatusText.textContent = getTranslation('status_idle', 'Idle');
             return;
+        }
+
+        // Set card status to downloading (active processing state with pulsing gradients)
+        if (organiserCard) {
+            organiserCard.classList.remove('status-setup');
+            organiserCard.classList.add('status-downloading');
+        }
+        if (organiserStatusText) {
+            organiserStatusText.textContent = "Processing...";
         }
 
         var processedCount = 0;
@@ -1719,6 +1783,9 @@ async function startOrganiser() {
             `;
             if (resultsList) resultsList.prepend(item);
             var statusEl = item.querySelector(`#org-status-${index}`);
+
+            // Initialize track progress loader
+            updateOrganiserProgress(index, file.filename, 'Preparing', 'active', 10);
 
             try {
                 if (organiserShouldStop) throw new Error("Cancelled");
@@ -1744,6 +1811,7 @@ async function startOrganiser() {
                     const mod = activeModules[i];
                     if (!mod) continue;
 
+                    const modLabel = mod === window.gemini ? "API 1" : (mod === window.gemini2 ? "API 2" : "API 3");
                     const modName = mod === window.gemini ? "Gemini 1" : (mod === window.gemini2 ? "Gemini 2" : "Gemini 3");
                     addOrganiserLog(`[${modName}] Query started for: ${file.filename}`);
 
@@ -1752,6 +1820,9 @@ async function startOrganiser() {
 
                     for (let attempt = 0; attempt < maxRetries; attempt++) {
                         if (organiserShouldStop) throw new Error("Cancelled");
+
+                        // Update loader with active model being queried
+                        updateOrganiserProgress(index, file.filename, `${modLabel}: Querying`, 'active', 30 + (attempt * 15));
 
                         try {
                             const [result, err] = await mod.ask_ai(file.filename, file.folder_name || 'Onbekend', file.tags || {});
@@ -1786,6 +1857,7 @@ async function startOrganiser() {
                 if (!qData) {
                     addOrganiserLog(`AI text matching failed, attempting Shazam Audio fallback for: ${file.filename}...`);
                     if (statusEl) statusEl.textContent = "AI Audio Query...";
+                    updateOrganiserProgress(index, file.filename, 'Shazam API', 'active', 75);
 
                     const [audioRes, audioErr] = await window.shazam.ask_shazam(file.full_path);
                     if (audioRes) {
@@ -1798,6 +1870,8 @@ async function startOrganiser() {
                 if (organiserShouldStop) throw new Error("Cancelled");
 
                 if (statusEl) statusEl.textContent = `Moving & tagging...`;
+                updateOrganiserProgress(index, file.filename, 'Moving', 'active', 90);
+
                 var fRes = await fetch('/api/finalize', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1810,16 +1884,28 @@ async function startOrganiser() {
 
                 item.classList.add('success');
                 if (statusEl) statusEl.textContent = `Success`;
+
+                // Set success or unknown status icon on the loader
+                if (qData.unknown) {
+                    updateOrganiserProgress(index, file.filename, 'Unknown', 'unknown', 100);
+                } else {
+                    updateOrganiserProgress(index, file.filename, 'Success', 'complete', 100);
+                }
             } catch (err) {
                 if (err.name === 'AbortError' || err.message === 'Cancelled') {
                     item.classList.add('warning');
                     if (statusEl) statusEl.textContent = "Cancelled";
+                    updateOrganiserProgress(index, file.filename, 'Cancelled', 'failed', 0);
                 } else {
                     item.classList.add('failed');
                     if (statusEl) statusEl.textContent = "Error: " + err.message;
+                    updateOrganiserProgress(index, file.filename, 'Failed', 'failed', 0);
                 }
             } finally {
                 processedCount++;
+                var overallPercent = Math.round((processedCount / files.length) * 100);
+                if (organiserTrackText) organiserTrackText.textContent = `${processedCount} / ${files.length} (${overallPercent}%)`;
+                if (organiserProgressFill) organiserProgressFill.style.width = overallPercent + '%';
                 if (trackCount) trackCount.textContent = `${processedCount} / ${files.length} items processed`;
             }
         };
@@ -1850,8 +1936,25 @@ async function startOrganiser() {
 
         addOrganiserLog(organiserShouldStop ? "Process cancelled." : "[Success] Process completed successfully.");
 
+        // Set card status to final completed/idle state
+        if (organiserCard) {
+            organiserCard.classList.remove('status-downloading', 'status-setup');
+            if (organiserShouldStop) {
+                organiserCard.classList.add('status-idle');
+                if (organiserStatusText) organiserStatusText.textContent = getTranslation('status_idle', 'Idle');
+            } else {
+                organiserCard.classList.add('status-completed');
+                if (organiserStatusText) organiserStatusText.textContent = getTranslation('status_completed', 'Completed');
+            }
+        }
+
     } catch (err) {
         addOrganiserLog("[Error] " + err.message);
+        if (organiserCard) {
+            organiserCard.classList.remove('status-downloading', 'status-setup');
+            organiserCard.classList.add('status-failed');
+        }
+        if (organiserStatusText) organiserStatusText.textContent = getTranslation('status_failed', 'Failed');
     } finally {
         finishOrganiser();
     }
@@ -1875,6 +1978,72 @@ function addOrganiserLog(msg) {
     div.textContent = msg;
     consoleEl.appendChild(div);
     consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+/**
+ * Updates or creates a track processing loader in the Organiser's active progress panel.
+ * Represents active operations (like Gemini API calls, Shazam match, file system moving)
+ * using neutral monochromatic badges and state-specific SVG loader icons (green circle,
+ * green checkmark, red cross, yellow exclamation mark) without text emojis.
+ * 
+ * @param {string|number} id - Unique identifier (index) for the file in the batch
+ * @param {string} filename - The filename of the track being processed
+ * @param {string} actionText - Text to display inside the action/API badge (e.g. 'API 1: Querying')
+ * @param {string} state - The status state of the track ('active', 'complete', 'failed', 'unknown')
+ * @param {number} percent - The current percentage for the circular loader fill
+ */
+function updateOrganiserProgress(id, filename, actionText, state, percent) {
+    var container = document.getElementById('organiser-active-progress');
+    if (!container) return;
+
+    var pct = Math.min(100, Math.max(0, Math.round(percent || 0)));
+    var blockId = 'org-pb-' + id;
+    var block = document.getElementById(blockId);
+
+    if (!block) {
+        block = document.createElement('div');
+        block.className = 'track-progress-block';
+        block.id = blockId;
+        block.innerHTML = 
+            '<div class="track-progress-info">' +
+                '<span class="track-progress-title">' + filename + '</span>' +
+            '</div>' +
+            '<div class="track-progress-right">' +
+                '<span class="api-badge" id="org-badge-' + id + '">' + actionText + '</span>' +
+                '<div class="track-progress-circle-wrapper">' +
+                    '<svg class="track-progress-circle" viewBox="0 0 36 36">' +
+                        '<circle cx="18" cy="18" r="15.9155" class="circle-bg" />' +
+                        '<circle cx="18" cy="18" r="15.9155" class="circle-fill" id="org-fill-circle-' + id + '" stroke-dasharray="0, 100" />' +
+                        '<path class="checkmark-path" d="M12 18 l4 4 l8 -8" />' +
+                        '<path class="cross-path" d="M12 12 l12 12 M24 12 l-12 12" />' +
+                        '<path class="exclamation-path" d="M18 11 v8 M18 25 v2" />' +
+                    '</svg>' +
+                '</div>' +
+            '</div>';
+        container.prepend(block);
+    }
+
+    // Update action badge text
+    var badge = document.getElementById('org-badge-' + id);
+    if (badge) {
+        badge.textContent = actionText;
+    }
+
+    // Update loader circle percentage
+    var circle = document.getElementById('org-fill-circle-' + id);
+    if (circle) {
+        circle.setAttribute('stroke-dasharray', pct + ', 100');
+    }
+
+    // Update state classes for showing/hiding checkmarks, crosses, exclamation marks
+    block.classList.remove('complete', 'failed', 'unknown');
+    if (state === 'complete') {
+        block.classList.add('complete');
+    } else if (state === 'failed') {
+        block.classList.add('failed');
+    } else if (state === 'unknown') {
+        block.classList.add('unknown');
+    }
 }
 
 var organiserEventSource = null;

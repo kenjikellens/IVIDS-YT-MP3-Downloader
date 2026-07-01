@@ -806,6 +806,7 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
 
+
     def handle_get_default_dir(self):
         """
         GET /api/get-default-dir
