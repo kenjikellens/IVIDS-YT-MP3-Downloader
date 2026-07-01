@@ -100,29 +100,29 @@
                     <div class="left-column">
                         <!-- Top-Left: Config settings card -->
                         <section class="card config-panel" id="settings-card">
-                        <div class="form-row">
-                            <label for="url-input" data-i18n="home_url_label">YouTube URL</label>
-                            <input type="text" id="url-input" data-i18n-placeholder="home_url_placeholder" placeholder="Paste playlist or video link here..." autocomplete="off">
-                        </div>
-                        <div class="form-row">
-                            <label data-i18n="home_save_label">Save to</label>
-                            <div class="dir-row">
-                                <div class="dir-path" id="dir-path">Loading...</div>
-                                <button class="btn-browse" id="btn-browse" data-i18n="home_browse">Browse</button>
-                                <input type="file" id="dir-input" webkitdirectory directory style="display: none;">
+                            <div class="form-row vertical-row">
+                                <label for="url-input" data-i18n="home_url_label">YouTube URL</label>
+                                <input type="text" id="url-input" data-i18n-placeholder="home_url_placeholder" placeholder="Paste playlist or video link here..." autocomplete="off">
                             </div>
-                        </div>
-
-                        <!-- Media Type Dropdown -->
-                        <div class="form-row">
-                            <label for="media-type-select" data-i18n="home_media_type">Media Type</label>
-                            <div class="media-type-select-wrapper">
-                                <select id="media-type-select">
-                                    <option value="audio" selected>🎵 Audio</option>
-                                    <option value="video">🎬 Video</option>
-                                </select>
+                            <div class="form-row vertical-row">
+                                <label data-i18n="home_save_label">Save to</label>
+                                <div class="dir-row">
+                                    <div class="dir-path" id="dir-path">Loading...</div>
+                                    <button class="btn-browse" id="btn-browse" data-i18n="home_browse">Browse</button>
+                                    <input type="file" id="dir-input" webkitdirectory directory style="display: none;">
+                                </div>
                             </div>
-                        </div>
+ 
+                            <!-- Media Type Dropdown -->
+                            <div class="form-row vertical-row">
+                                <label for="media-type-select" data-i18n="home_media_type">Media Type</label>
+                                <div class="media-type-select-wrapper">
+                                    <select id="media-type-select">
+                                        <option value="audio" selected>🎵 Audio</option>
+                                        <option value="video">🎬 Video</option>
+                                    </select>
+                                </div>
+                            </div>
 
                         <!-- Advanced Settings Disclosure Trigger -->
                         <button class="advanced-toggle" id="advanced-toggle" data-i18n="home_advanced">
@@ -285,7 +285,7 @@
                 <div class="app-layout">
                     <!-- Left: Config panel -->
                     <section class="card config-panel" id="organiser-config-panel">
-                        <div class="form-row">
+                        <div class="form-row vertical-row">
                             <label data-i18n="organiser_source_label">Source Folder</label>
                             <div class="dir-row">
                                 <div class="dir-path" id="organiser-source-path">Select folder...</div>
@@ -293,7 +293,7 @@
                                 <input type="file" id="organiser-source-input" webkitdirectory directory style="display: none;">
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div class="form-row vertical-row">
                             <label data-i18n="organiser_target_label">Target Folder</label>
                             <div class="dir-row">
                                 <div class="dir-path" id="organiser-target-path">Select folder...</div>

@@ -328,7 +328,8 @@ html, body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding: 24px;
     gap: 16px;
 }
@@ -338,7 +339,6 @@ html, body {
     display: none;
     flex-direction: column;
     flex: 1;
-    min-height: 0;
 }
 
 /* Visible active page class modifier */
@@ -396,7 +396,6 @@ html, body {
     grid-template-rows: 1fr;
     gap: 16px;
     flex: 1;
-    min-height: 0;
 }
 
 /* Base card border element styling */
@@ -534,6 +533,44 @@ html, body {
 .btn-browse:active {
     transform: scale(0.95);
     filter: brightness(0.9);
+}
+
+/*
+ * .vertical-row
+ * Lays out form row elements vertically, stacking the label on top and the input/control below it.
+ */
+.vertical-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+/*
+ * .vertical-row label
+ * Resets minimum width and margins for labels within vertical rows to allow proper stacking.
+ */
+.vertical-row label {
+    min-width: 0;
+    margin-bottom: 4px;
+}
+
+/*
+ * .vertical-row .dir-row
+ * Modifies the flex container for the path display and browse button to flow in a column.
+ */
+.vertical-row .dir-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+}
+
+/*
+ * .vertical-row .btn-browse
+ * Align the browse button to the start of the column (left) so it does not stretch.
+ */
+.vertical-row .btn-browse {
+    align-self: flex-start;
 }
 
 /* General layout container for action triggers (Start, Cancel) */

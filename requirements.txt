@@ -1,1 +1,3 @@
 mutagen
+google-genai
+pydantic

@@ -12,6 +12,9 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 import hashlib
 import shutil
 import time
+import gemini
+import gemini2
+import gemini3
 
 log_clients = []
 DB_PATH = "processed_log.json"
@@ -726,6 +729,8 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             self.handle_scan(post_data)
         elif path == "/api/finalize":
             self.handle_finalize(post_data)
+        elif path == "/api/gemini":
+            self.handle_gemini(post_data)
         else:
             self.send_response(404)
             self.end_headers()
@@ -799,6 +804,35 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json.dumps({"status": "Succes", "result": "Verwerkt"}).encode('utf-8'))
+        except Exception as e:
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+
+    def handle_gemini(self, post_data):
+        try:
+            params = json.loads(post_data.decode('utf-8'))
+            module_name = params.get("module")
+            filename = params.get("filename")
+            folder_name = params.get("folder_name")
+            tags = params.get("tags")
+            
+            if module_name == "gemini":
+                result, err = gemini.ask_ai(filename, folder_name, tags)
+            elif module_name == "gemini2":
+                result, err = gemini2.ask_ai(filename, folder_name, tags)
+            elif module_name == "gemini3":
+                result, err = gemini3.ask_ai(filename, folder_name, tags)
+            else:
+                raise Exception(f"Unknown gemini module: {module_name}")
+                
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"result": result, "error": err}).encode('utf-8'))
         except Exception as e:
             self.send_response(400)
             self.send_header("Content-Type", "application/json")
