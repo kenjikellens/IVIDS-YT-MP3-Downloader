@@ -1,3 +1,4 @@
 mutagen
 google-genai
 pydantic
+python-dotenv

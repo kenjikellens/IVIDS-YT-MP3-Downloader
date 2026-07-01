@@ -1793,9 +1793,9 @@ async function startOrganiser() {
                 if (statusEl) statusEl.textContent = "AI Query...";
 
                 const modules = [
-                    window.gemini,
-                    window.gemini2,
-                    window.gemini3
+                    "gemini",
+                    "gemini2",
+                    "gemini3"
                 ];
 
                 const startIdx = index % modules.length;
@@ -1811,8 +1811,8 @@ async function startOrganiser() {
                     const mod = activeModules[i];
                     if (!mod) continue;
 
-                    const modLabel = mod === window.gemini ? "API 1" : (mod === window.gemini2 ? "API 2" : "API 3");
-                    const modName = mod === window.gemini ? "Gemini 1" : (mod === window.gemini2 ? "Gemini 2" : "Gemini 3");
+                    const modLabel = mod === "gemini" ? "API 1" : (mod === "gemini2" ? "API 2" : "API 3");
+                    const modName = mod === "gemini" ? "Gemini 1" : (mod === "gemini2" ? "Gemini 2" : "Gemini 3");
                     addOrganiserLog(`[${modName}] Query started for: ${file.filename}`);
 
                     const maxRetries = 3;
@@ -1825,7 +1825,33 @@ async function startOrganiser() {
                         updateOrganiserProgress(index, file.filename, `${modLabel}: Querying`, 'active', 30 + (attempt * 15));
 
                         try {
-                            const [result, err] = await mod.ask_ai(file.filename, file.folder_name || 'Onbekend', file.tags || {});
+                            const response = await fetch('/api/gemini', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    module: mod,
+                                    filename: file.filename,
+                                    folder_name: file.folder_name || 'Onbekend',
+                                    tags: file.tags || {}
+                                })
+                            });
+                            
+                            if (!response.ok) {
+                                const errData = await response.json().catch(() => ({}));
+                                throw new Error(errData.error || "HTTP " + response.status);
+                            }
+                            const resData = await response.json();
+                            
+                            let result = resData.result || resData;
+                            let err = null;
+                            if (result.error || result.unknown) {
+                                err = result.error || "unknown";
+                                result = null;
+                            } else if (Array.isArray(resData) && resData.length === 2) {
+                                result = resData[0];
+                                err = resData[1];
+                            }
+
                             if (result) {
                                 qData = result;
                                 break;
@@ -1859,7 +1885,30 @@ async function startOrganiser() {
                     if (statusEl) statusEl.textContent = "AI Audio Query...";
                     updateOrganiserProgress(index, file.filename, 'Shazam API', 'active', 75);
 
-                    const [audioRes, audioErr] = await window.shazam.ask_shazam(file.full_path);
+                    const shazamResponse = await fetch('/api/gemini', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            module: "shazam",
+                            filepath: file.full_path
+                        })
+                    });
+                    
+                    let audioRes = null;
+                    let audioErr = null;
+                    if (shazamResponse.ok) {
+                        const sData = await shazamResponse.json();
+                        if (Array.isArray(sData)) {
+                            audioRes = sData[0];
+                            audioErr = sData[1];
+                        } else if (sData.error || sData.unknown) {
+                            audioErr = sData.error || "unknown";
+                        } else {
+                            audioRes = sData;
+                        }
+                    } else {
+                        audioErr = "Shazam API failed with " + shazamResponse.status;
+                    }
                     if (audioRes) {
                         qData = audioRes;
                     } else {
@@ -1910,7 +1959,7 @@ async function startOrganiser() {
             }
         };
 
-        const concurrency = 3;
+        const concurrency = 1;
         let currentIndex = 0;
         
         const worker = async () => {

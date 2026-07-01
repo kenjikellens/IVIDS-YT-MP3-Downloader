@@ -21,3 +21,6 @@ ffmpeg-release-essentials.zip
 # Built artifacts
 /*.exe
 /*.apk
+
+# Local configuration keys
+.env

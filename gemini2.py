@@ -9,9 +9,12 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# API Key voor deze module
-API_KEY = "AIzaSyC-UBpJAp5w4Uq233rzxGxBUd87N-LNruw"
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
+# API Key voor deze module loaded from environment variable
+API_KEY = os.getenv("GEMINI_KEY_2")
 # Modellen voor de Free Key (in volgorde van voorkeur/prioriteit)
 MODELS = [
     "gemini-2.5-flash",

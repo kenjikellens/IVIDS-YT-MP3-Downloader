@@ -15,6 +15,7 @@ import time
 import gemini
 import gemini2
 import gemini3
+import shazam
 
 log_clients = []
 DB_PATH = "processed_log.json"
@@ -711,7 +712,7 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             # Fallback to serving index.html or other static files in ui/
             if path == "/" or path == "":
                 self.path = "/ui/index.html"
-            else:
+            elif not path.startswith("/ui/"):
                 self.path = "/ui" + path
             super().do_GET()
 
@@ -825,6 +826,8 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
                 result, err = gemini2.ask_ai(filename, folder_name, tags)
             elif module_name == "gemini3":
                 result, err = gemini3.ask_ai(filename, folder_name, tags)
+            elif module_name == "shazam":
+                result, err = shazam.ask_shazam(params.get("filepath", ""))
             else:
                 raise Exception(f"Unknown gemini module: {module_name}")
                 
