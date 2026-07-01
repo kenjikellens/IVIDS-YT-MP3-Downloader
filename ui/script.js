@@ -128,6 +128,8 @@ function navigateTo(targetPageId) {
 
     if (targetPageId === 'page-home') {
         document.getElementById('nav-home').classList.add('active');
+    } else if (targetPageId === 'page-ytdl') {
+        document.getElementById('nav-ytdl').classList.add('active');
     } else if (targetPageId === 'page-downloads') {
         document.getElementById('nav-downloads').classList.add('active');
         renderDownloadHistory();
@@ -1118,6 +1120,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (hamburgerBtn) hamburgerBtn.addEventListener('click', toggleSidebar);
     if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
     if (navHome) navHome.addEventListener('click', () => navigateTo('page-home'));
+    
+    var navYtdl = document.getElementById('nav-ytdl');
+    if (navYtdl) navYtdl.addEventListener('click', () => navigateTo('page-ytdl'));
+    
     if (navDownloads) navDownloads.addEventListener('click', () => navigateTo('page-downloads'));
     if (navSettings) navSettings.addEventListener('click', () => navigateTo('page-settings'));
 
