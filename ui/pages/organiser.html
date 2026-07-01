@@ -1,0 +1,87 @@
+<!--
+  Music Organiser pagina fragment (organiser.html)
+  Dit is de standalone Music Organiser interface waarmee lokale bestanden
+  gesorteerd kunnen worden op basis van de geselecteerde template-periodes.
+-->
+<header class="page-header">
+    <h1 data-i18n="organiser_header">Music Organiser</h1>
+</header>
+
+<div class="app-layout">
+    <!-- Left: Config panel for setting source, target, template mode, and file action options -->
+    <section class="card config-panel" id="organiser-config-panel">
+        <div class="form-row vertical-row">
+            <label data-i18n="organiser_source_label">Source Folder</label>
+            <div class="dir-row">
+                <div class="dir-path" id="organiser-source-path">Select folder...</div>
+                <button class="btn-browse" id="btn-organiser-browse-source" data-i18n="home_browse">Browse</button>
+                <input type="file" id="organiser-source-input" webkitdirectory directory style="display: none;">
+            </div>
+        </div>
+        <div class="form-row vertical-row">
+            <label data-i18n="organiser_target_label">Target Folder</label>
+            <div class="dir-row">
+                <div class="dir-path" id="organiser-target-path">Select folder...</div>
+                <button class="btn-browse" id="btn-organiser-browse-target" data-i18n="home_browse">Browse</button>
+                <input type="file" id="organiser-target-input" webkitdirectory directory style="display: none;">
+            </div>
+        </div>
+        <!-- Organise Mode (Templates) Dropdown Selection -->
+        <div class="form-row vertical-row">
+            <label for="organiser-mode-select">Organisatiemethode</label>
+            <div class="media-type-select-wrapper">
+                <select id="organiser-mode-select">
+                    <option value="classic_periods" selected>Muziek - Klassieke Periodes (Standaard)</option>
+                    <option value="artist_album">Muziek - Artiest / Album</option>
+                    <option value="channel">Video - Kanaal / YouTuber</option>
+                    <option value="flat">Geen submappen (Platte lijst)</option>
+                </select>
+            </div>
+        </div>
+        <!-- Checkbox to decide whether files are moved (and deleted from source) instead of copied -->
+        <div class="form-row checkbox-row">
+            <input type="checkbox" id="organiser-delete-source">
+            <label for="organiser-delete-source">Bestanden verplaatsen in plaats van kopiëren (bron opruimen)</label>
+        </div>
+        <div class="actions">
+            <button class="btn-download" id="btn-organiser-start" data-i18n="organiser_start">Start Processing</button>
+            <button class="btn-cancel" id="btn-organiser-cancel" data-i18n="home_cancel" style="display: none;">Stop</button>
+        </div>
+    </section>
+
+    <!-- Middle: Organiser Status and Logs -->
+    <div class="output-panel" id="organiser-progress-section">
+        <!-- Overall Organiser Status Card -->
+        <section class="card overall-status-card status-idle" id="organiser-status-card">
+            <div class="progress-header">
+                <div class="status-left-group">
+                    <span class="status-dot"></span>
+                    <span class="status-text" id="organiser-status-text" data-i18n="console_status_idle">Status: Idle</span>
+                </div>
+                <span class="status-number-container" id="organiser-track-text"></span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="organiser-progress-fill"></div>
+            </div>
+            <!-- Nested container for active track organization loaders -->
+            <div class="active-progress-container" id="organiser-active-progress"></div>
+        </section>
+        <!-- Organiser Console Logs card -->
+        <div class="console" id="organiser-console" role="log" style="flex: 1;"></div>
+    </div>
+
+    <!-- Right: Preview/Results panel -->
+    <section class="card preview-panel" id="organiser-preview-panel">
+        <div class="preview-header">
+            <span class="preview-title" data-i18n="organiser_results_title">Results</span>
+        </div>
+        <div class="preview-state-playlist" style="display:flex;">
+            <div class="track-list-header">
+                <span class="track-count" id="organiser-track-count">0 items processed</span>
+            </div>
+            <div class="track-list-items" id="organiser-results">
+                <!-- Results populate here -->
+            </div>
+        </div>
+    </section>
+</div>

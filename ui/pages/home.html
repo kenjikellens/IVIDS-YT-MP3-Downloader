@@ -1,0 +1,70 @@
+<!--
+  Welkompagina fragment (home.html)
+  Dit is de startpagina van de applicatie. Het toont een premium overzicht
+  en introductie van alle functies met directe navigatielinks.
+-->
+<header class="page-header">
+    <h1 data-i18n="home_header">Welkom bij IVIDS</h1>
+</header>
+
+<div class="dashboard-container" style="display: flex; flex-direction: column; gap: 24px; max-width: 1200px; margin: 20px auto; padding: 0 20px;">
+    <!-- Welkomstbanner -->
+    <div class="card welcome-banner" style="padding: 32px; display: flex; align-items: center; gap: 24px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(9, 9, 11, 0.4) 100%); border-left: 4px solid var(--accent-green);">
+        <div style="flex: 1;">
+            <h2 style="font-size: 1.8rem; margin-bottom: 8px; color: var(--text-primary);">IVIDS Media Hub</h2>
+            <p style="font-size: 1rem; color: var(--text-secondary); line-height: 1.6;">
+                Je alles-in-één platform om YouTube-media te downloaden, te converteren en automatisch te organiseren. Gebruik de workflow pipeline voor een volledig geautomatiseerd proces, of kies hieronder een losse module.
+            </p>
+        </div>
+        <svg viewBox="0 0 24 24" width="72" height="72" fill="var(--accent-green)" style="opacity: 0.85;">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+        </svg>
+    </div>
+
+    <!-- Modulair Overzicht Grid -->
+    <div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        
+        <!-- Feature 1: Workflow Pipeline -->
+        <div class="card feature-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="var(--text-secondary)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+                    <h3 style="margin: 0; font-size: 1.25rem;">Workflow Pipeline</h3>
+                </div>
+                <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+                    Download een YouTube afspeellijst en laat de bestanden direct taggen en sorteren door AI in één vloeiende stap.
+                </p>
+            </div>
+            <button class="btn-download" onclick="navigateTo('pipeline')" style="width: 100%;">Open Pipeline</button>
+        </div>
+
+        <!-- Feature 2: Standalone Downloader -->
+        <div class="card feature-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="var(--text-secondary)"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+                    <h3 style="margin: 0; font-size: 1.25rem;">YT MP3 Downloader</h3>
+                </div>
+                <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+                    Alleen downloaden? Gebruik de standalone downloader voor audio (MP3/M4A/WAV) of video (MP4) met submappen per jaar of playlist.
+                </p>
+            </div>
+            <button class="btn-secondary" onclick="navigateTo('ytdl')" style="width: 100%; border-color: var(--border-default);">Open Downloader</button>
+        </div>
+
+        <!-- Feature 3: Standalone Sorter -->
+        <div class="card feature-card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="var(--text-secondary)"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                    <h3 style="margin: 0; font-size: 1.25rem;">Music Organiser</h3>
+                </div>
+                <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+                    Organiseer een lokale map met muziek. Gemini AI en Shazam categoriseren je nummers automatisch op artiest, album, kanaal of tijdvak.
+                </p>
+            </div>
+            <button class="btn-secondary" onclick="navigateTo('organiser')" style="width: 100%; border-color: var(--border-default);">Open Organiser</button>
+        </div>
+
+    </div>
+</div>

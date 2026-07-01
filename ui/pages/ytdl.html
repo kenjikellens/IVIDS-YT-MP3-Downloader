@@ -1,0 +1,170 @@
+<!--
+  YT Downloader pagina fragment (ytdl.html)
+  Dit is de standalone YouTube Downloader interface waarmee video's en audio's individueel
+  of als afspeellijst kunnen worden gedownload met geavanceerde opties.
+-->
+<header class="page-header">
+    <h1 data-i18n="ytdl_header">MP3 YT downloader</h1>
+</header>
+
+<div class="app-layout home-layout">
+    <div class="left-column">
+        <!-- Top-Left: Config settings card -->
+        <section class="card config-panel" id="settings-card">
+            <div class="form-row vertical-row">
+                <label for="url-input" data-i18n="home_url_label">YouTube URL</label>
+                <input type="text" id="url-input" data-i18n-placeholder="home_url_placeholder" placeholder="Paste playlist or video link here..." autocomplete="off">
+            </div>
+            <div class="form-row vertical-row">
+                <label data-i18n="home_save_label">Save to</label>
+                <div class="dir-row">
+                    <div class="dir-path" id="dir-path">Loading...</div>
+                    <button class="btn-browse" id="btn-browse" data-i18n="home_browse">Browse</button>
+                    <input type="file" id="dir-input" webkitdirectory directory style="display: none;">
+                </div>
+            </div>
+
+            <!-- Media Type Dropdown -->
+            <div class="form-row vertical-row">
+                <label for="media-type-select" data-i18n="home_media_type">Media Type</label>
+                <div class="media-type-select-wrapper">
+                    <select id="media-type-select">
+                        <option value="audio" selected>🎵 Audio</option>
+                        <option value="video">🎬 Video</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Advanced Settings Disclosure Trigger -->
+            <button class="advanced-toggle" id="advanced-toggle" data-i18n="home_advanced">
+                ⚙ Advanced Settings
+            </button>
+
+            <!-- Advanced Settings panel grid -->
+            <div class="advanced-panel" id="advanced-panel">
+                <div id="audio-options" style="display: contents;">
+                    <div class="adv-group">
+                        <label for="format-select" data-i18n="home_format">Audio Format</label>
+                        <select id="format-select">
+                            <option value="mp3" selected>MP3</option>
+                            <option value="m4a">M4A</option>
+                            <option value="wav">WAV</option>
+                            <option value="opus">Opus</option>
+                            <option value="best" data-i18n="home_format_best">Original (No Transcoding)</option>
+                        </select>
+                    </div>
+                    <div class="adv-group">
+                        <label for="quality-select" data-i18n="home_quality">Audio Quality</label>
+                        <select id="quality-select">
+                            <option value="320k">320 kbps (best transcode)</option>
+                            <option value="256k">256 kbps (very high)</option>
+                            <option value="192k" selected>192 kbps (high)</option>
+                            <option value="128k">128 kbps (medium)</option>
+                            <option value="96k">96 kbps (low)</option>
+                            <option value="64k">64 kbps (very low)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="video-options" style="display: none;">
+                    <div class="adv-group">
+                        <label for="video-format">Video Format</label>
+                        <select id="video-format">
+                            <option value="mp4" selected>MP4</option>
+                            <option value="webm">WebM</option>
+                            <option value="mkv">MKV</option>
+                            <option value="best">Original (No Transcoding)</option>
+                        </select>
+                    </div>
+                    <div class="adv-group">
+                        <label for="video-quality">Video Quality</label>
+                        <select id="video-quality">
+                            <option value="best" selected>Best Available</option>
+                            <option value="2160">4K (2160p)</option>
+                            <option value="1440">1440p</option>
+                            <option value="1080">1080p (Full HD)</option>
+                            <option value="720">720p (HD)</option>
+                            <option value="480">480p (SD)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="adv-group" style="grid-column: 1 / -1;">
+                    <label for="subfolder-select">Subfolder Organization</label>
+                    <select id="subfolder-select">
+                        <option value="none" selected>None (Save directly to folder)</option>
+                        <option value="year">By Upload Year (e.g. 2008/Title)</option>
+                        <option value="playlist">By Playlist (e.g. Playlist Name/Title)</option>
+                        <option value="channel">By Channel (e.g. Creator/Title)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn-download" id="btn-download" data-i18n="home_start">Start Download</button>
+                <button class="btn-cancel" id="btn-cancel" data-i18n="home_cancel" style="display: none;" disabled>Cancel</button>
+            </div>
+        </section>
+
+        <!-- Right: Preview panel -->
+        <section class="card preview-panel" id="preview-panel">
+            <div class="preview-header">
+                <span class="preview-title" data-i18n="preview_title">Preview</span>
+                <button class="btn-secondary" id="btn-load-info" data-i18n="preview_load">Load Info</button>
+            </div>
+
+            <!-- STATE: Empty -->
+            <div class="preview-empty" id="state-empty">
+                <svg class="preview-empty-icon" viewBox="0 0 24 24" width="44" height="44">
+                    <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9.5 16.5l7-4.5-7-4.5v9z"/>
+                </svg>
+                <p data-i18n="preview_empty">Paste a YouTube URL to see a preview</p>
+            </div>
+
+            <!-- STATE: Single Video Preview -->
+            <div id="state-single" class="preview-state-single">
+                <div class="video-card" id="single-video-card">
+                    <!-- Populated dynamically by script.js -->
+                </div>
+            </div>
+
+            <!-- STATE: Playlist Preview -->
+            <div id="state-playlist" class="preview-state-playlist">
+                <!-- Select all / deselect toolbar -->
+                <div class="track-list-header">
+                    <span class="track-count" id="track-count-text">0 tracks found</span>
+                    <button class="btn-select" id="btn-select-all" data-i18n="preview_select_all">Select All</button>
+                    <button class="btn-select" id="btn-deselect-all" data-i18n="preview_deselect_all">Deselect All</button>
+                </div>
+
+                <!-- Scrollable track checklist card items -->
+                <div class="track-list-items" id="track-list">
+                    <!-- Populated dynamically by script.js -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Right: Progress column containing status cards, active downloads, and console logs -->
+    <div class="output-panel" id="progress-section">
+        <!-- Overall Status Card -->
+        <section class="card overall-status-card status-idle">
+            <div class="progress-header">
+                <div class="status-left-group">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span class="status-text" id="status-text" data-i18n="console_status_idle">Status: Idle</span>
+                </div>
+                <span class="track-text" id="track-text"></span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+        </section>
+
+        <!-- Songs progress card (only visible during playlist downloads) -->
+        <section class="card active-progress-container" id="active-progress-container"></section>
+
+        <!-- Console Logs card -->
+        <div class="console" id="console" role="log"></div>
+    </div>
+</div>

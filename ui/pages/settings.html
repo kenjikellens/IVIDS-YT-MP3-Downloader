@@ -1,0 +1,155 @@
+<!--
+  Settings pagina fragment (settings.html)
+  Dit is de gebruikersinstellingen interface waarmee we de taal, het thema,
+  het standaard downloadgedrag en CLI logs voorkeuren beheren.
+-->
+<div class="settings-page-wrapper">
+    <header class="page-header">
+        <h1 data-i18n="settings_header">Settings</h1>
+    </header>
+    <div class="settings-sections-container">
+        <!-- Appearance Settings -->
+        <section class="settings-section">
+            <h2 class="settings-section-title" data-i18n="settings_appearance_section">Appearance</h2>
+            <div class="card settings-card">
+                <div class="form-row settings-row">
+                    <div class="settings-info">
+                        <label class="settings-label" data-i18n="settings_theme_label">Application Theme</label>
+                        <span class="settings-desc" data-i18n="settings_theme_desc">Toggle between dark and light appearance modes.</span>
+                    </div>
+                    <div class="theme-toggle-container">
+                        <svg class="theme-toggle-icon sun-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                            <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <div class="theme-switch" id="theme-switch" role="checkbox" aria-checked="false" tabindex="0" title="Toggle Theme" aria-label="Toggle Application Theme">
+                            <div class="theme-switch-handle"></div>
+                        </div>
+                        <svg class="theme-toggle-icon moon-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Language Settings -->
+        <section class="settings-section">
+            <h2 class="settings-section-title" data-i18n="settings_language_section">Language</h2>
+            <div class="card settings-card">
+                <div class="form-row settings-row">
+                    <div class="settings-info">
+                        <label class="settings-label" data-i18n="settings_lang_label">Interface Language</label>
+                        <span class="settings-desc" data-i18n="settings_lang_desc">Select the application user interface language.</span>
+                    </div>
+                    <div class="settings-lang-select-wrapper">
+                        <select id="settings-lang-select" class="settings-lang-select">
+                            <option value="en" selected>English</option>
+                            <option value="nl">Nederlands</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="es">Español</option>
+                            <option value="it">Italiano</option>
+                            <option value="pt">Português</option>
+                            <option value="ru">Русский</option>
+                            <option value="zh">简体中文</option>
+                            <option value="hi">हिन्दी</option>
+                            <option value="ar">العربية</option>
+                            <option value="ja">日本語</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Download Behavior Settings -->
+        <section class="settings-section">
+            <h2 class="settings-section-title" data-i18n="settings_downloads_section">Downloads</h2>
+            <div class="card settings-card">
+                <div class="form-row settings-row">
+                    <div class="settings-info">
+                        <label class="settings-label" data-i18n="settings_folder_label">Default Folder</label>
+                        <span class="settings-desc" data-i18n="settings_folder_desc">Select which folder is loaded on application startup.</span>
+                    </div>
+                    <div class="settings-lang-select-wrapper">
+                        <select id="settings-dir-mode" class="settings-lang-select">
+                            <option value="standard" data-i18n="settings_folder_standard" selected>Standard (Downloads)</option>
+                            <option value="last" data-i18n="settings_folder_last">Last Selected Folder</option>
+                            <option value="custom" data-i18n="settings_folder_custom">Custom Folder...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="settings-dir-row hidden" id="settings-custom-dir-row">
+                    <div class="settings-dir-path" id="settings-dir-path">Loading...</div>
+                    <button class="btn-browse" id="btn-settings-browse" data-i18n="home_browse">Browse</button>
+                    <input type="file" id="settings-dir-input" webkitdirectory directory style="display: none;">
+                </div>
+                <div class="form-row settings-row">
+                    <div class="settings-info">
+                        <label class="settings-label" data-i18n="settings_multidownload_label">Simultaneous Downloads</label>
+                        <span class="settings-desc" data-i18n="settings_multidownload_desc">Choose how many tracks download at the same time for playlists.</span>
+                    </div>
+                    <div class="settings-lang-select-wrapper">
+                        <select id="settings-concurrency" class="settings-lang-select">
+                            <option value="1" selected>1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Advanced Preferences -->
+        <section class="settings-section">
+            <h2 class="settings-section-title" data-i18n="settings_advanced_section">Advanced Settings</h2>
+            <div class="card settings-card">
+                <div class="form-row settings-row">
+                    <div class="settings-info">
+                        <label class="settings-label" data-i18n="settings_cli_label">Show Console Logs (CLI)</label>
+                        <span class="settings-desc" data-i18n="settings_cli_desc">Show raw download logs in the progress section.</span>
+                    </div>
+                    <div class="theme-toggle-container">
+                        <div class="theme-switch" id="cli-switch" role="checkbox" aria-checked="false" tabindex="0" title="Toggle CLI Logs" aria-label="Toggle Console Logs">
+                            <div class="theme-switch-handle"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row settings-row">
+                    <div class="settings-info">
+                        <label class="settings-label" data-i18n="settings_startup_audio_label">Default Startup Audio Quality</label>
+                        <span class="settings-desc" data-i18n="settings_startup_audio_desc">Choose which audio quality is selected when the app opens.</span>
+                    </div>
+                    <div class="settings-lang-select-wrapper">
+                        <select id="settings-startup-audio-quality" class="settings-lang-select">
+                            <option value="320k">320 kbps (best transcode)</option>
+                            <option value="256k">256 kbps (very high)</option>
+                            <option value="192k" selected>192 kbps (high)</option>
+                            <option value="128k">128 kbps (medium)</option>
+                            <option value="96k">96 kbps (low)</option>
+                            <option value="64k">64 kbps (very low)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row settings-row">
+                    <div class="settings-info">
+                        <label class="settings-label" data-i18n="settings_startup_video_label">Default Startup Video Quality</label>
+                        <span class="settings-desc" data-i18n="settings_startup_video_desc">Choose which video quality is selected when the app opens.</span>
+                    </div>
+                    <div class="settings-lang-select-wrapper">
+                        <select id="settings-startup-video-quality" class="settings-lang-select">
+                            <option value="best" selected>Best Available</option>
+                            <option value="2160">4K (2160p)</option>
+                            <option value="1440">1440p</option>
+                            <option value="1080">1080p (Full HD)</option>
+                            <option value="720">720p (HD)</option>
+                            <option value="480">480p (SD)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
