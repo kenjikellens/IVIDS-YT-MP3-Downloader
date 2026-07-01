@@ -18,7 +18,6 @@ import gemini3
 import shazam
 
 log_clients = []
-DB_PATH = "processed_log.json"
 
 # Global flags and references to manage the single-user active download process
 active_processes = set()
@@ -37,25 +36,10 @@ def add_log(msg):
             if client in log_clients:
                 log_clients.remove(client)
 
-def load_processed_log():
-    if not os.path.exists(DB_PATH):
-        return set()
-    try:
-        with open(DB_PATH, 'r', encoding='utf-8') as f:
-            return set(json.load(f))
-    except:
-        return set()
 
-def save_processed_log(processed_set):
-    try:
-        with open(DB_PATH, 'w', encoding='utf-8') as f:
-            json.dump(list(processed_set), f, indent=4)
-    except Exception as e:
-        print("Failed to save processed log:", e)
 
 def scan_folder(source_dir):
     files_to_process = []
-    processed = load_processed_log()
     allowed_extensions = ('.mp3', '.wav', '.m4a', '.flac', '.wma', '.ogg', '.aac', '.ape', '.alac')
     
     for root, dirs, files in os.walk(source_dir):
@@ -65,9 +49,6 @@ def scan_folder(source_dir):
                 full_path = os.path.join(root, file)
                 file_id = hashlib.md5(full_path.encode('utf-8')).hexdigest()
                 
-                if file_id in processed:
-                    continue
-                    
                 folder_name = os.path.basename(root)
                 tags = {}
                 
@@ -185,9 +166,7 @@ def finalize_file(file_info, ai_data, target_dir):
             except Exception as tag_err:
                 add_log(f"[Warning] Failed to write ID3 tags: {str(tag_err)}")
                 
-    processed = load_processed_log()
-    processed.add(file_info.get("id"))
-    save_processed_log(processed)
+
 
 # Determine folders depending on whether running as raw python script or compiled PyInstaller EXE
 if getattr(sys, 'frozen', False):
