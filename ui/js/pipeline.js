@@ -417,6 +417,9 @@ async function startPipeline() {
     pipelineShouldStop = false;
     pipelineActiveControllers = [];
 
+    // Reset visual nodes state
+    updateVisualPipeline(null, 'reset');
+
     if (enableOrganiser) {
         connectPipelineOrganiserLogStream();
     }
@@ -439,6 +442,10 @@ async function startPipeline() {
 
             setPipelineStatus('Setup...', 'Downloader initialiseren', 10);
             addPipelineLog("[Stap 1/2] Downloader gestart...");
+
+            // Set Step 1 completed, Step 2 active
+            updateVisualPipeline(1, 'completed');
+            updateVisualPipeline(2, 'active');
 
             var selectedIds = [];
             document.querySelectorAll('.pipeline-track-cb').forEach(cb => {
@@ -556,6 +563,10 @@ async function startPipeline() {
 
             setPipelineStatus('Setup...', 'Bestanden scannen...', 55);
             addPipelineLog("[Stap 2/2] Organiseren gestart...");
+
+            // Set Step 2 completed, Step 3 active
+            updateVisualPipeline(2, 'completed');
+            updateVisualPipeline(3, 'active');
 
             var scanRes = await fetch('/api/scan', {
                 method: 'POST',
@@ -715,6 +726,11 @@ async function startPipeline() {
         }
 
         if (pipelineShouldStop) return;
+        
+        // Pipeline completed successfully, set step 3 and 4 completed
+        updateVisualPipeline(3, 'completed');
+        updateVisualPipeline(4, 'completed');
+
         setPipelineStatus('Completed', 'Pipeline voltooid!', 100);
         addPipelineLog("[Success] Gehele pipeline met succes afgerond!");
     } catch (err) {
@@ -748,4 +764,61 @@ function connectPipelineOrganiserLogStream() {
             pipelineEventSource = null;
         }
     };
+}
+
+/**
+ * Updates visual status step nodes on the horizontal process timeline in real-time.
+ * 
+ * @param {number|null} stepNumber - Step index (1-4)
+ * @param {string} state - Update state ('active' | 'completed' | 'reset')
+ */
+function updateVisualPipeline(stepNumber, state) {
+    if (state === 'reset') {
+        for (var i = 1; i <= 4; i++) {
+            var node = document.getElementById('step-node-' + i);
+            if (node) {
+                node.classList.remove('active', 'completed');
+            }
+            var timeline = document.getElementById('timeline-step-' + i);
+            if (timeline) {
+                timeline.classList.remove('active');
+            }
+        }
+        var conn = document.getElementById('visual-connector-bar');
+        if (conn) conn.style.width = '0%';
+        var t1 = document.getElementById('timeline-step-1');
+        if (t1) t1.classList.add('active');
+        var n1 = document.getElementById('step-node-1');
+        if (n1) n1.classList.add('active');
+        return;
+    }
+
+    var node = document.getElementById('step-node-' + stepNumber);
+    if (node) {
+        if (state === 'active') {
+            node.classList.add('active');
+            node.classList.remove('completed');
+        } else if (state === 'completed') {
+            node.classList.add('completed');
+            node.classList.remove('active');
+        }
+    }
+
+    var conn = document.getElementById('visual-connector-bar');
+    if (conn) {
+        if (stepNumber === 1 && state === 'completed') conn.style.width = '33%';
+        else if (stepNumber === 2 && state === 'completed') conn.style.width = '66%';
+        else if (stepNumber === 3 && state === 'completed') conn.style.width = '100%';
+    }
+
+    for (var i = 1; i <= 3; i++) {
+        var timeline = document.getElementById('timeline-step-' + i);
+        if (timeline) {
+            if (i === stepNumber && state === 'active') {
+                timeline.classList.add('active');
+            } else if (i === stepNumber && state === 'completed') {
+                timeline.classList.remove('active');
+            }
+        }
+    }
 }
