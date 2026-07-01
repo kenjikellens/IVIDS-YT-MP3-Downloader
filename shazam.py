@@ -98,6 +98,10 @@ async def recognize_audio(filepath):
 
         return None, f"Alle API keys faalden. Laatste fout: {last_err}"
 
+    except Exception as e:
+        logger.error(f"Gemini Audio Herkenning algemene fout: {e}")
+        return None, str(e)
+
 def ask_shazam(filepath):
     """Sync wrapper voor de audio herkenning."""
     try:
