@@ -1068,47 +1068,14 @@ html, body {
     background: linear-gradient(145deg, var(--bg-card), rgba(244, 244, 245, 0.6));
 }
 
-/*
- * State-specific borders and shadow glows on the overall-status-card.
- * Adds visual feedback to the user on the current downloading health and state.
- */
-.overall-status-card.status-idle {
-    border-color: var(--border-default);
-}
-.overall-status-card.status-querying {
-    border-color: rgba(245, 158, 11, 0.35);
-    box-shadow: 0 0 16px rgba(245, 158, 11, 0.08), var(--shadow-card);
-}
-.light-theme .overall-status-card.status-querying {
-    border-color: rgba(217, 119, 6, 0.35);
-}
-.overall-status-card.status-setup {
-    border-color: rgba(99, 102, 241, 0.35);
-    box-shadow: 0 0 16px rgba(99, 102, 241, 0.08), var(--shadow-card);
-}
-.light-theme .overall-status-card.status-setup {
-    border-color: rgba(79, 70, 229, 0.35);
-}
-.overall-status-card.status-downloading {
-    border-color: rgba(59, 130, 246, 0.4);
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.12), var(--shadow-card);
-}
-.light-theme .overall-status-card.status-downloading {
-    border-color: rgba(37, 99, 235, 0.4);
-}
-.overall-status-card.status-completed {
-    border-color: rgba(16, 185, 129, 0.45);
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.12), var(--shadow-card);
-}
-.light-theme .overall-status-card.status-completed {
-    border-color: rgba(5, 150, 105, 0.45);
-}
+/* State-specific borders on the overall-status-card. No colored glows or neon edges. */
+.overall-status-card.status-idle,
+.overall-status-card.status-querying,
+.overall-status-card.status-setup,
+.overall-status-card.status-downloading,
+.overall-status-card.status-completed,
 .overall-status-card.status-failed {
-    border-color: rgba(239, 68, 68, 0.45);
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.12), var(--shadow-card);
-}
-.light-theme .overall-status-card.status-failed {
-    border-color: rgba(220, 38, 38, 0.45);
+    border-color: var(--border-default);
 }
 
 /*
@@ -1248,9 +1215,10 @@ html, body {
     background-image: linear-gradient(90deg, #71717a 0%, #a1a1aa 50%, #71717a 100%);
     animation: progress-gradient-shimmer 3s infinite linear;
 }
+/* Downloading state uses a plain green fill bar with no colorful gradient */
 .status-downloading .progress-bar-fill {
-    background-image: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #d946ef 100%);
-    animation: progress-gradient-shimmer 2.5s infinite linear;
+    background-image: none;
+    background-color: #22c55e;
 }
 .status-completed .progress-bar-fill {
     background-image: linear-gradient(90deg, #10b981 0%, #059669 100%);
