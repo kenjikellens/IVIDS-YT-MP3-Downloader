@@ -84,5 +84,12 @@
   "dl_meta_original": "Original Quality",
   "settings_multidownload_label": "Simultaneous Downloads",
   "settings_multidownload_desc": "Choose how many tracks download at the same time for playlists.",
-  "log_concurrency_saved": "Simultaneous downloads set to: "
+  "log_concurrency_saved": "Simultaneous downloads set to: ",
+  "nav_organiser": "Music Organiser",
+  "organiser_header": "Music Organiser",
+  "organiser_source_label": "Source Folder",
+  "organiser_target_label": "Target Folder",
+  "organiser_start": "Start Processing",
+  "organiser_results_title": "Results",
+  "organiser_err_paths": "Please select both source and target folders."
 }

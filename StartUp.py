@@ -9,11 +9,181 @@ import threading
 import webbrowser
 import socket
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
+import hashlib
+import shutil
+import time
+
+log_clients = []
+DB_PATH = "processed_log.json"
 
 # Global flags and references to manage the single-user active download process
 active_processes = set()
 cancelled = False
 download_lock = threading.Lock()
+
+def add_log(msg):
+    global log_clients
+    print(msg)
+    payload = f"data: {msg}\n\n"
+    for client in list(log_clients):
+        try:
+            client.write(payload.encode('utf-8'))
+            client.flush()
+        except:
+            if client in log_clients:
+                log_clients.remove(client)
+
+def load_processed_log():
+    if not os.path.exists(DB_PATH):
+        return set()
+    try:
+        with open(DB_PATH, 'r', encoding='utf-8') as f:
+            return set(json.load(f))
+    except:
+        return set()
+
+def save_processed_log(processed_set):
+    try:
+        with open(DB_PATH, 'w', encoding='utf-8') as f:
+            json.dump(list(processed_set), f, indent=4)
+    except Exception as e:
+        print("Failed to save processed log:", e)
+
+def scan_folder(source_dir):
+    files_to_process = []
+    processed = load_processed_log()
+    allowed_extensions = ('.mp3', '.wav', '.m4a', '.flac', '.wma', '.ogg', '.aac', '.ape', '.alac')
+    
+    for root, dirs, files in os.walk(source_dir):
+        for file in files:
+            ext = os.path.splitext(file)[1].lower()
+            if ext in allowed_extensions:
+                full_path = os.path.join(root, file)
+                file_id = hashlib.md5(full_path.encode('utf-8')).hexdigest()
+                
+                if file_id in processed:
+                    continue
+                    
+                folder_name = os.path.basename(root)
+                tags = {}
+                
+                if ext == '.mp3':
+                    try:
+                        from mutagen.easyid3 import EasyID3
+                        try:
+                            audio = EasyID3(full_path)
+                            tags = {
+                                "title": audio.get("title", [""])[0],
+                                "artist": audio.get("artist", [""])[0],
+                                "album": audio.get("album", [""])[0],
+                                "year": audio.get("date", [""])[0],
+                                "track": audio.get("tracknumber", [""])[0]
+                            }
+                        except:
+                            pass
+                    except:
+                        pass
+                        
+                files_to_process.append({
+                    "id": file_id,
+                    "filename": file,
+                    "full_path": full_path,
+                    "folder_name": folder_name,
+                    "tags": tags
+                })
+    return files_to_process
+
+YEAR_CATEGORIES = [
+    { "cat": "40's", "min": 1940, "max": 1949 },
+    { "cat": "50's", "min": 1950, "max": 1959 },
+    { "cat": "60's", "min": 1960, "max": 1969 },
+    { "cat": "70's", "min": 1970, "max": 1979 },
+    { "cat": "80's", "min": 1980, "max": 1989 },
+    { "cat": "90's", "min": 1990, "max": 1999 },
+    { "cat": "2000-2005", "min": 2000, "max": 2005 },
+    { "cat": "2006-2010", "min": 2006, "max": 2010 },
+    { "cat": "2011-2015", "min": 2011, "max": 2015 },
+    { "cat": "2016-2020", "min": 2016, "max": 2020 },
+    { "cat": "2021-2025", "min": 2021, "max": 2025 },
+    { "cat": "2026-2030", "min": 2026, "max": 2030 }
+]
+
+def get_year_category(year):
+    try:
+        y = int(year)
+        for group in YEAR_CATEGORIES:
+            if y >= group["min"] and y <= group["max"]:
+                return group["cat"]
+    except:
+        pass
+    return "onbekend"
+
+def clean_filename(name):
+    if not name:
+        return "Onbekend"
+    return "".join(c for c in name if c not in '<>:"/\\|?*').strip()
+
+def finalize_file(file_info, ai_data, target_dir):
+    source_path = file_info.get("full_path")
+    if not os.path.exists(source_path):
+        raise Exception(f"Bronbestand bestaat niet: {source_path}")
+        
+    dest_dirs = []
+    new_filename = ""
+    
+    if ai_data.get("unknown", False):
+        dest_dirs = [os.path.join(target_dir, "onbekend")]
+        new_filename = file_info.get("filename")
+    else:
+        year_val = ai_data.get("jaar")
+        year_cat = get_year_category(year_val)
+        original_folder = file_info.get("folder_name", "")
+        
+        artist = clean_filename(ai_data.get("artiesten") or ai_data.get("artiest(en)") or "Onbekend")
+        title = clean_filename(ai_data.get("titel") or "Onbekend")
+        ext = os.path.splitext(source_path)[1]
+        new_filename = f"{artist} - {title}{ext}"
+        
+        dest_dirs = [os.path.join(target_dir, year_cat)]
+        
+        is_year_folder = any(group["cat"] == original_folder for group in YEAR_CATEGORIES) or original_folder.lower() == 'jaar'
+        if original_folder and not is_year_folder:
+            dest_dirs.append(os.path.join(target_dir, original_folder))
+            
+    final_path = ""
+    for dest_dir in dest_dirs:
+        if not os.path.exists(dest_dir):
+            os.makedirs(dest_dir, exist_ok=True)
+        dest_path = os.path.join(dest_dir, new_filename)
+        shutil.copyfile(source_path, dest_path)
+        final_path = dest_path
+        
+        ext = os.path.splitext(dest_path)[1].lower()
+        if ext == '.mp3' and not ai_data.get("unknown", False):
+            try:
+                from mutagen.easyid3 import EasyID3
+                try:
+                    audio = EasyID3(dest_path)
+                except:
+                    from mutagen.mp3 import MP3
+                    audio = MP3(dest_path)
+                    audio.add_tags()
+                    audio = EasyID3(dest_path)
+                    
+                audio["title"] = ai_data.get("titel", "")
+                audio["artist"] = ai_data.get("artiesten") or ai_data.get("artiest(en)") or ""
+                audio["album"] = ai_data.get("album", "")
+                if ai_data.get("jaar"):
+                    audio["date"] = str(ai_data.get("jaar"))
+                if ai_data.get("track"):
+                    audio["tracknumber"] = str(ai_data.get("track"))
+                audio.save()
+            except Exception as tag_err:
+                add_log(f"[Warning] Failed to write ID3 tags: {str(tag_err)}")
+                
+    processed = load_processed_log()
+    processed.add(file_info.get("id"))
+    save_processed_log(processed)
 
 # Determine folders depending on whether running as raw python script or compiled PyInstaller EXE
 if getattr(sys, 'frozen', False):
@@ -530,6 +700,10 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             self.handle_cancel_download()
         elif path == "/api/fetch-metadata":
             self.handle_fetch_metadata(parsed_url.query)
+        elif path == "/api/get_file":
+            self.handle_get_file(parsed_url.query)
+        elif path == "/api/log_stream":
+            self.handle_log_stream()
         else:
             # Fallback to serving index.html or other static files in ui/
             if path == "/" or path == "":
@@ -537,6 +711,100 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             else:
                 self.path = "/ui" + path
             super().do_GET()
+
+    def do_POST(self):
+        """
+        Handles incoming POST requests. Route mapper.
+        """
+        parsed_url = urllib.parse.urlparse(self.path)
+        path = parsed_url.path
+
+        content_length = int(self.headers.get('Content-Length', 0))
+        post_data = self.rfile.read(content_length)
+
+        if path == "/api/scan":
+            self.handle_scan(post_data)
+        elif path == "/api/finalize":
+            self.handle_finalize(post_data)
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def handle_get_file(self, query_string):
+        params = urllib.parse.parse_qs(query_string)
+        file_path = params.get("path", [""])[0]
+        
+        if not file_path or not os.path.exists(file_path):
+            self.send_response(404)
+            self.end_headers()
+            return
+            
+        self.send_response(200)
+        self.send_header("Content-Type", "application/octet-stream")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        
+        with open(file_path, 'rb') as f:
+            self.wfile.write(f.read())
+
+    def handle_log_stream(self):
+        global log_clients
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        
+        log_clients.append(self.wfile)
+        try:
+            while True:
+                time.sleep(5)
+                self.wfile.write(b": keepalive\n\n")
+                self.wfile.flush()
+        except:
+            pass
+        finally:
+            if self.wfile in log_clients:
+                log_clients.remove(self.wfile)
+
+    def handle_scan(self, post_data):
+        try:
+            params = json.loads(post_data.decode('utf-8'))
+            source_dir = params.get("source_dir")
+            if not source_dir:
+                raise Exception("Missing source_dir parameter")
+            files = scan_folder(source_dir)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"files": files}).encode('utf-8'))
+        except Exception as e:
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+
+    def handle_finalize(self, post_data):
+        try:
+            params = json.loads(post_data.decode('utf-8'))
+            file_info = params.get("file_info")
+            ai_data = params.get("ai_data")
+            target_dir = params.get("target_dir")
+            finalize_file(file_info, ai_data, target_dir)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "Succes", "result": "Verwerkt"}).encode('utf-8'))
+        except Exception as e:
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
 
     def handle_get_default_dir(self):
         """

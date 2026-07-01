@@ -11,8 +11,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Custom Style Sheet with Cache-Buster version parameter -->
     <link rel="stylesheet" href="style.css?v=1.2.0">
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/generative-ai": "https://esm.run/@google/generative-ai"
+      }
+    }
+    </script>
+    <script type="module" src="gemini.js"></script>
+    <script type="module" src="gemini2.js"></script>
+    <script type="module" src="gemini3.js"></script>
+    <script type="module" src="shazam.js"></script>
     <!-- Main JavaScript script with Cache-Buster version parameter -->
     <script src="script.js?v=1.2.0" defer></script>
+
 </head>
 <body>
 
@@ -64,6 +76,10 @@
                 <svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10l-4-4h3V9h2v3h3l-4 4z"/></svg>
                 <span data-i18n="nav_downloads">Downloaded Files</span>
             </div>
+            <div class="nav-item" id="nav-organiser">
+                <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                <span data-i18n="nav_organiser">Music Organiser</span>
+            </div>
             <div class="sidebar-spacer"></div>
             <div class="nav-item" id="nav-settings">
                 <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
@@ -80,9 +96,10 @@
                     <h1 data-i18n="home_header">Download Audio</h1>
                 </header>
 
-                <div class="app-layout">
-                    <!-- Top-Left: Config settings card -->
-                    <section class="card config-panel" id="settings-card">
+                <div class="app-layout home-layout">
+                    <div class="left-column">
+                        <!-- Top-Left: Config settings card -->
+                        <section class="card config-panel" id="settings-card">
                         <div class="form-row">
                             <label for="url-input" data-i18n="home_url_label">YouTube URL</label>
                             <input type="text" id="url-input" data-i18n-placeholder="home_url_placeholder" placeholder="Paste playlist or video link here..." autocomplete="off">
@@ -215,6 +232,7 @@
                             </div>
                         </div>
                     </section>
+                    </div>
 
                     <!-- Right: Progress column containing status cards, active downloads, and console logs -->
                     <div class="output-panel" id="progress-section">
@@ -252,6 +270,59 @@
                 </div>
                 <div class="downloads-list" id="downloads-list-items">
                     <!-- Populated dynamically by script.js -->
+                </div>
+            </div>
+
+            <!-- ===== PAGE: MUSIC ORGANISER ===== -->
+            <div class="page" id="page-organiser">
+                <header class="page-header">
+                    <h1 data-i18n="organiser_header">Music Organiser</h1>
+                </header>
+                
+                <div class="app-layout">
+                    <!-- Left: Config panel -->
+                    <section class="card config-panel" id="organiser-config-panel">
+                        <div class="form-row">
+                            <label data-i18n="organiser_source_label">Source Folder</label>
+                            <div class="dir-row">
+                                <div class="dir-path" id="organiser-source-path">Select folder...</div>
+                                <button class="btn-browse" id="btn-organiser-browse-source" data-i18n="home_browse">Browse</button>
+                                <input type="file" id="organiser-source-input" webkitdirectory directory style="display: none;">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <label data-i18n="organiser_target_label">Target Folder</label>
+                            <div class="dir-row">
+                                <div class="dir-path" id="organiser-target-path">Select folder...</div>
+                                <button class="btn-browse" id="btn-organiser-browse-target" data-i18n="home_browse">Browse</button>
+                                <input type="file" id="organiser-target-input" webkitdirectory directory style="display: none;">
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn-download" id="btn-organiser-start" data-i18n="organiser_start">Start Processing</button>
+                            <button class="btn-cancel" id="btn-organiser-cancel" data-i18n="home_cancel" style="display: none;">Stop</button>
+                        </div>
+                    </section>
+
+                    <!-- Middle: Preview/Results panel -->
+                    <section class="card preview-panel" id="organiser-preview-panel">
+                        <div class="preview-header">
+                            <span class="preview-title" data-i18n="organiser_results_title">Results</span>
+                        </div>
+                        <div class="preview-state-playlist" style="display:flex;">
+                            <div class="track-list-header">
+                                <span class="track-count" id="organiser-track-count">0 items processed</span>
+                            </div>
+                            <div class="track-list-items" id="organiser-results">
+                                <!-- Results populate here -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Right: Console logs -->
+                    <div class="output-panel" id="organiser-progress-section">
+                        <div class="console" id="organiser-console" role="log" style="flex: 1;"></div>
+                    </div>
                 </div>
             </div>
 

@@ -84,5 +84,12 @@
   "dl_meta_original": "Originele kwaliteit",
   "settings_multidownload_label": "Gelijktijdige downloads",
   "settings_multidownload_desc": "Kies hoeveel nummers tegelijkertijd downloaden bij afspeellijsten.",
-  "log_concurrency_saved": "Gelijktijdige downloads ingesteld op: "
+  "log_concurrency_saved": "Gelijktijdige downloads ingesteld op: ",
+  "nav_organiser": "Muziek Organisator",
+  "organiser_header": "Muziek Organisator",
+  "organiser_source_label": "Bronmap",
+  "organiser_target_label": "Doelmap",
+  "organiser_start": "Start Verwerking",
+  "organiser_results_title": "Resultaten",
+  "organiser_err_paths": "Selecteer a.u.b. zowel een bron- als een doelmap."
 }

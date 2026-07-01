@@ -133,6 +133,8 @@ function navigateTo(targetPageId) {
         renderDownloadHistory();
     } else if (targetPageId === 'page-settings') {
         document.getElementById('nav-settings').classList.add('active');
+    } else if (targetPageId === 'page-organiser') {
+        document.getElementById('nav-organiser').classList.add('active');
     }
     
     closeSidebar();
@@ -1595,3 +1597,299 @@ function syncCustomSelects() {
         }
     });
 }
+
+// ============================================================
+// MUSIC ORGANISER LOGIC (Browser / Python Server Mode)
+// ============================================================
+
+var organiserShouldStop = false;
+var organiserActiveControllers = [];
+
+window.addEventListener('DOMContentLoaded', () => {
+    var navOrganiser = document.getElementById('nav-organiser');
+    if (navOrganiser) navOrganiser.addEventListener('click', () => navigateTo('page-organiser'));
+
+    var btnBrowseSource = document.getElementById('btn-organiser-browse-source');
+    var btnBrowseTarget = document.getElementById('btn-organiser-browse-target');
+    var btnStart = document.getElementById('btn-organiser-start');
+    var btnCancel = document.getElementById('btn-organiser-cancel');
+
+    if (btnBrowseSource) btnBrowseSource.addEventListener('click', () => handleOrganiserBrowse('source'));
+    if (btnBrowseTarget) btnBrowseTarget.addEventListener('click', () => handleOrganiserBrowse('target'));
+    if (btnStart) btnStart.addEventListener('click', startOrganiser);
+    if (btnCancel) btnCancel.addEventListener('click', stopOrganiser);
+
+    // Restore saved paths
+    try {
+        var sourceDir = localStorage.getItem('organiser-source') || '';
+        var targetDir = localStorage.getItem('organiser-target') || '';
+        if (sourceDir) document.getElementById('organiser-source-path').textContent = sourceDir;
+        if (targetDir) document.getElementById('organiser-target-path').textContent = targetDir;
+    } catch(e) {}
+});
+
+async function handleOrganiserBrowse(type) {
+    try {
+        var response = await fetch('/api/select-directory');
+        if (!response.ok) throw new Error('Network error selecting folder');
+        var data = await response.json();
+        var folderPath = data.path;
+        if (folderPath) {
+            var pathEl = document.getElementById(type === 'source' ? 'organiser-source-path' : 'organiser-target-path');
+            if (pathEl) pathEl.textContent = folderPath;
+            localStorage.setItem(`organiser-${type}`, folderPath);
+        }
+    } catch (err) {
+        addOrganiserLog("[Error] Failed to select folder: " + err.message);
+    }
+}
+
+function stopOrganiser() {
+    organiserShouldStop = true;
+    var cancelBtn = document.getElementById('btn-organiser-cancel');
+    if (cancelBtn) {
+        cancelBtn.disabled = true;
+        cancelBtn.textContent = "Stopping...";
+    }
+    organiserActiveControllers.forEach(c => {
+        try { c.abort(); } catch(e) {}
+    });
+    organiserActiveControllers = [];
+}
+
+async function startOrganiser() {
+    var sourceEl = document.getElementById('organiser-source-path');
+    var targetEl = document.getElementById('organiser-target-path');
+    var sourcePath = sourceEl ? sourceEl.textContent : '';
+    var targetPath = targetEl ? targetEl.textContent : '';
+    
+    if (!sourcePath || sourcePath === 'Select folder...' || !targetPath || targetPath === 'Select folder...') {
+        alert(getTranslation('organiser_err_paths', 'Please select both source and target folders.'));
+        return;
+    }
+
+    var startBtn = document.getElementById('btn-organiser-start');
+    var cancelBtn = document.getElementById('btn-organiser-cancel');
+    var resultsList = document.getElementById('organiser-results');
+    var trackCount = document.getElementById('organiser-track-count');
+
+    if (startBtn) startBtn.style.display = 'none';
+    if (cancelBtn) {
+        cancelBtn.style.display = 'inline-block';
+        cancelBtn.disabled = false;
+        cancelBtn.textContent = getTranslation('home_cancel', 'Stop');
+    }
+    if (resultsList) resultsList.innerHTML = '';
+    
+    organiserShouldStop = false;
+    organiserActiveControllers = [];
+    var consoleEl = document.getElementById('organiser-console');
+    if (consoleEl) consoleEl.innerHTML = '';
+
+    connectOrganiserLogStream();
+
+    try {
+        addOrganiserLog("Scanning source directory...");
+        var scanRes = await fetch('/api/scan', {
+            method: 'POST',
+            body: JSON.stringify({ source_dir: sourcePath }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!scanRes.ok) throw new Error("Failed to scan directory.");
+        var scanData = await scanRes.json();
+        if (scanData.error) throw new Error(scanData.error);
+
+        var files = scanData.files || [];
+        if (trackCount) trackCount.textContent = `0 / ${files.length} items processed`;
+        
+        if (files.length === 0) {
+            if (resultsList) resultsList.innerHTML = "<div class='organiser-result-item'>No new files found.</div>";
+            finishOrganiser();
+            return;
+        }
+
+        var processedCount = 0;
+
+        const processFile = async (file, index, signal) => {
+            var item = document.createElement('div');
+            item.className = 'organiser-result-item';
+            item.innerHTML = `
+                <div class="organiser-item-name">[${index+1}/${files.length}] ${file.filename}</div>
+                <div class="organiser-item-detail" id="org-status-${index}">Waiting...</div>
+            `;
+            if (resultsList) resultsList.prepend(item);
+            var statusEl = item.querySelector(`#org-status-${index}`);
+
+            try {
+                if (organiserShouldStop) throw new Error("Cancelled");
+
+                if (statusEl) statusEl.textContent = "AI Query...";
+
+                const modules = [
+                    window.gemini,
+                    window.gemini2,
+                    window.gemini3
+                ];
+
+                const startIdx = index % modules.length;
+                const activeModules = [];
+                for (let i = 0; i < modules.length; i++) {
+                    activeModules.push(modules[(startIdx + i) % modules.length]);
+                }
+
+                let qData = null;
+                let lastErr = null;
+
+                for (let i = 0; i < activeModules.length; i++) {
+                    const mod = activeModules[i];
+                    if (!mod) continue;
+
+                    const modName = mod === window.gemini ? "Gemini 1" : (mod === window.gemini2 ? "Gemini 2" : "Gemini 3");
+                    addOrganiserLog(`[${modName}] Query started for: ${file.filename}`);
+
+                    const maxRetries = 3;
+                    let backoff = 2000;
+
+                    for (let attempt = 0; attempt < maxRetries; attempt++) {
+                        if (organiserShouldStop) throw new Error("Cancelled");
+
+                        try {
+                            const [result, err] = await mod.ask_ai(file.filename, file.folder_name || 'Onbekend', file.tags || {});
+                            if (result) {
+                                qData = result;
+                                break;
+                            }
+                            if (err === "unknown") {
+                                addOrganiserLog(`[${modName}] Model could not match ('unknown'). Trying next model...`);
+                                lastErr = err;
+                                break;
+                            }
+                            if (err === "exhausted" || (err && String(err).includes('429'))) {
+                                addOrganiserLog(`[${modName}] Rate limit reached. Backing off ${backoff/1000}s...`);
+                                await new Promise(r => setTimeout(r, backoff));
+                                backoff *= 2;
+                                lastErr = err;
+                                continue;
+                            }
+                            addOrganiserLog(`[${modName}] Error: ${err}. Trying next model...`);
+                            lastErr = err;
+                            break;
+                        } catch (ex) {
+                            addOrganiserLog(`[${modName}] Exception: ${ex.message}. Trying next model...`);
+                            lastErr = ex.message;
+                            break;
+                        }
+                    }
+                    if (qData) break;
+                }
+
+                if (!qData) {
+                    addOrganiserLog(`AI text matching failed, attempting Shazam Audio fallback for: ${file.filename}...`);
+                    if (statusEl) statusEl.textContent = "AI Audio Query...";
+
+                    const [audioRes, audioErr] = await window.shazam.ask_shazam(file.full_path);
+                    if (audioRes) {
+                        qData = audioRes;
+                    } else {
+                        qData = { unknown: true, error: audioErr || lastErr };
+                    }
+                }
+
+                if (organiserShouldStop) throw new Error("Cancelled");
+
+                if (statusEl) statusEl.textContent = `Moving & tagging...`;
+                var fRes = await fetch('/api/finalize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file_info: file, ai_data: qData, target_dir: targetPath }),
+                    signal: signal
+                });
+                if (!fRes.ok) throw new Error("Finalize failed");
+                var fData = await fRes.json();
+                if (fData.error) throw new Error(fData.error);
+
+                item.classList.add('success');
+                if (statusEl) statusEl.textContent = `Success`;
+            } catch (err) {
+                if (err.name === 'AbortError' || err.message === 'Cancelled') {
+                    item.classList.add('warning');
+                    if (statusEl) statusEl.textContent = "Cancelled";
+                } else {
+                    item.classList.add('failed');
+                    if (statusEl) statusEl.textContent = "Error: " + err.message;
+                }
+            } finally {
+                processedCount++;
+                if (trackCount) trackCount.textContent = `${processedCount} / ${files.length} items processed`;
+            }
+        };
+
+        const concurrency = 3;
+        let currentIndex = 0;
+        
+        const worker = async () => {
+            while (currentIndex < files.length && !organiserShouldStop) {
+                const index = currentIndex++;
+                const file = files[index];
+                const controller = new AbortController();
+                organiserActiveControllers.push(controller);
+                
+                try {
+                    await processFile(file, index, controller.signal);
+                } finally {
+                    organiserActiveControllers = organiserActiveControllers.filter(c => c !== controller);
+                }
+            }
+        };
+
+        const workers = [];
+        for (let i = 0; i < concurrency; i++) {
+            workers.push(worker());
+        }
+        await Promise.all(workers);
+
+        addOrganiserLog(organiserShouldStop ? "Process cancelled." : "[Success] Process completed successfully.");
+
+    } catch (err) {
+        addOrganiserLog("[Error] " + err.message);
+    } finally {
+        finishOrganiser();
+    }
+}
+
+function finishOrganiser() {
+    var startBtn = document.getElementById('btn-organiser-start');
+    var cancelBtn = document.getElementById('btn-organiser-cancel');
+    if (startBtn) startBtn.style.display = 'inline-block';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
+function addOrganiserLog(msg) {
+    var consoleEl = document.getElementById('organiser-console');
+    if (!consoleEl) return;
+    var div = document.createElement('div');
+    div.className = 'log-line';
+    if (msg.includes('[Success]')) div.className += ' log-success';
+    else if (msg.includes('[Error]')) div.className += ' log-error';
+    else if (msg.includes('[Warning]')) div.className += ' log-warn';
+    div.textContent = msg;
+    consoleEl.appendChild(div);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+var organiserEventSource = null;
+function connectOrganiserLogStream() {
+    if (organiserEventSource) {
+        organiserEventSource.close();
+    }
+    organiserEventSource = new EventSource('/api/log_stream');
+    organiserEventSource.onmessage = function(event) {
+        if (event.data) {
+            addOrganiserLog(event.data);
+        }
+    };
+    organiserEventSource.onerror = function() {
+        organiserEventSource.close();
+    };
+}
+
