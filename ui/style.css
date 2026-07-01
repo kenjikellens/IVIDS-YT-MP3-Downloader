@@ -2440,4 +2440,63 @@ html, body {
     transform-origin: center;
 }
 
+/*
+ * .checkbox-row
+ * Layout wrapper aligning premium custom checkbox inputs and their labels.
+ */
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0;
+    cursor: pointer;
+}
+
+/* Custom checkbox input styling replacing default browser checkboxes */
+.checkbox-row input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    background-color: var(--bg-input);
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.checkbox-row input[type="checkbox"]:hover {
+    border-color: var(--border-hover);
+}
+
+.checkbox-row input[type="checkbox"]:checked {
+    background-color: var(--accent-green);
+    border-color: var(--accent-green);
+}
+
+/* Vector checkmark symbol rendered inside custom checked state */
+.checkbox-row input[type="checkbox"]:checked::after {
+    content: "";
+    width: 5px;
+    height: 9px;
+    border: solid #ffffff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    position: relative;
+    top: -1px;
+}
+
+/* Text label styles for custom checkboxes */
+.checkbox-row label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
+
 

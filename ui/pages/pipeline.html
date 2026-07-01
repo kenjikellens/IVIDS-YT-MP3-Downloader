@@ -3,294 +3,119 @@
   Dit is de gecombineerde download- en sorteer-pipeline interface. Het stelt gebruikers in staat
   om een YouTube link op te geven en de downloads automatisch te laten taggen en ordenen door AI.
 -->
-<style>
-    /* Horizontal Pipeline visual path banner */
-    .pipeline-progress-banner {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background-color: var(--bg-card);
-        border: 1px solid var(--border-default);
-        border-radius: 8px;
-        padding: 20px 32px;
-        margin-bottom: 24px;
-        position: relative;
-    }
-    .light-theme .pipeline-progress-banner {
-        background-color: #f4f4f5;
-        border-color: #d4d4d8;
-    }
-    .pipeline-step-node {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        z-index: 2;
-        position: relative;
-        flex: 1;
-    }
-    .pipeline-step-circle {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background-color: var(--bg-app);
-        border: 2px solid var(--border-default);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 14px;
-        color: var(--text-muted);
-        transition: all 0.3s ease;
-    }
-    .light-theme .pipeline-step-circle {
-        background-color: #ffffff;
-    }
-    .pipeline-step-node.active .pipeline-step-circle {
-        border-color: var(--accent-green);
-        color: var(--accent-green);
-        box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
-    }
-    .pipeline-step-node.completed .pipeline-step-circle {
-        background-color: var(--accent-green);
-        border-color: var(--accent-green);
-        color: #ffffff;
-    }
-    .pipeline-step-label {
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--text-muted);
-        transition: color 0.3s ease;
-    }
-    .pipeline-step-node.active .pipeline-step-label {
-        color: var(--text-primary);
-        font-weight: 600;
-    }
-    .pipeline-step-node.completed .pipeline-step-label {
-        color: var(--accent-green);
-    }
-    .pipeline-connector-line {
-        position: absolute;
-        top: 38px;
-        left: 10%;
-        right: 10%;
-        height: 2px;
-        background-color: var(--border-default);
-        z-index: 1;
-    }
-    .pipeline-connector-progress {
-        height: 100%;
-        width: 0%;
-        background-color: var(--accent-green);
-        transition: width 0.5s ease;
-    }
-
-    /* Vertical timeline sidebar layouts */
-    .timeline-container {
-        display: flex;
-        flex-direction: column;
-        gap: 0px;
-        position: relative;
-        padding-left: 20px;
-    }
-    .timeline-container::before {
-        content: '';
-        position: absolute;
-        top: 15px;
-        bottom: 15px;
-        left: 4px;
-        width: 2px;
-        background: linear-gradient(to bottom, var(--border-default) 80%, rgba(0,0,0,0) 100%);
-        z-index: 1;
-    }
-    .timeline-item {
-        position: relative;
-        margin-bottom: 24px;
-    }
-    .timeline-badge {
-        position: absolute;
-        left: -24px;
-        top: 12px;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background-color: var(--bg-card);
-        border: 2px solid var(--border-default);
-        z-index: 2;
-        transition: all 0.3s ease;
-    }
-    .timeline-item.active .timeline-badge {
-        background-color: var(--accent-green);
-        border-color: var(--accent-green);
-        box-shadow: 0 0 8px var(--accent-green);
-    }
-    .timeline-item-title {
-        font-size: 1.15rem;
-        margin-top: 0;
-        margin-bottom: 16px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-</style>
-
 <header class="page-header">
     <h1 data-i18n="pipeline_header">Download & Sorteer Pipeline</h1>
 </header>
 
-<!-- Horizontal visual pipeline nodes banner -->
-<div class="pipeline-progress-banner">
-    <div class="pipeline-connector-line">
-        <div class="pipeline-connector-progress" id="visual-connector-bar"></div>
-    </div>
-    
-    <div class="pipeline-step-node active" id="step-node-1">
-        <div class="pipeline-step-circle">1</div>
-        <span class="pipeline-step-label">Invoer & Analyse</span>
-    </div>
-    <div class="pipeline-step-node" id="step-node-2">
-        <div class="pipeline-step-circle">2</div>
-        <span class="pipeline-step-label">Downloaden</span>
-    </div>
-    <div class="pipeline-step-node" id="step-node-3">
-        <div class="pipeline-step-circle">3</div>
-        <span class="pipeline-step-label">AI Categoriseren</span>
-    </div>
-    <div class="pipeline-step-node" id="step-node-4">
-        <div class="pipeline-step-circle">✓</div>
-        <span class="pipeline-step-label">Klaar</span>
-    </div>
-</div>
-
 <div class="app-layout home-layout">
-    <!-- Left Column: Pipeline Steps Configuration Timeline -->
-    <div class="left-column timeline-container">
-        
-        <!-- Step 1: Input Source and Preview checklist -->
-        <div class="timeline-item active" id="timeline-step-1">
-            <div class="timeline-badge"></div>
-            <section class="card config-panel" style="margin-left: 10px;">
-                <h3 class="timeline-item-title">
-                    <span style="color: var(--accent-green);">Stap 1:</span> YouTube Bron & Preview
+    <!-- Left Column: Pipeline Steps Configuration Panels -->
+    <div class="left-column">
+
+        <!-- Step 1: Downloader Card -->
+        <section class="card config-panel" id="pipeline-downloader-card">
+            <div class="step-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                <input type="checkbox" id="pipeline-enable-downloader" checked
+                    style="width: auto; margin: 0; cursor: pointer;">
+                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-color); cursor: pointer;"><label
+                        for="pipeline-enable-downloader" style="cursor: pointer;">Stap 1: YouTube Downloader</label>
                 </h3>
-                
+            </div>
+
+            <div id="pipeline-downloader-settings">
                 <div class="form-row vertical-row">
-                    <label for="pipeline-url-input">YouTube URL / Afspeellijst</label>
-                    <div style="display: flex; gap: 10px; width: 100%;">
-                        <input type="text" id="pipeline-url-input" placeholder="Paste playlist or video link here..." autocomplete="off" style="flex: 1;">
-                        <button class="btn-secondary" id="btn-pipeline-load-info" style="white-space: nowrap; padding: 0 16px;">Info laden</button>
+                    <label for="pipeline-url-input">YouTube URL</label>
+                    <input type="text" id="pipeline-url-input" placeholder="Paste playlist or video link here..."
+                        autocomplete="off">
+                </div>
+
+                <div class="form-row vertical-row">
+                    <label>Tijdelijke Downloadmap</label>
+                    <div class="dir-row">
+                        <div class="dir-path" id="pipeline-download-path">Loading...</div>
+                        <button class="btn-browse" id="btn-pipeline-browse-download">Browse</button>
+                        <input type="file" id="pipeline-download-input" webkitdirectory directory
+                            style="display: none;">
                     </div>
                 </div>
 
-                <!-- Custom folder selection for Step 1 -->
-                <div class="form-row vertical-row" style="margin-top: 16px;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <input type="checkbox" id="pipeline-enable-downloader" checked style="width: auto; margin: 0; cursor: pointer;">
-                        <label for="pipeline-enable-downloader" style="font-weight: 500; cursor: pointer;">Video's downloaden (Stap 1 activeren)</label>
-                    </div>
-                    <div id="pipeline-downloader-settings">
-                        <label>Tijdelijke Downloadmap</label>
-                        <div class="dir-row">
-                            <div class="dir-path" id="pipeline-download-path">Loading...</div>
-                            <button class="btn-browse" id="btn-pipeline-browse-download">Browse</button>
-                            <input type="file" id="pipeline-download-input" webkitdirectory directory style="display: none;">
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-        
-        <!-- Step 2: Format & Download Settings -->
-        <div class="timeline-item" id="timeline-step-2">
-            <div class="timeline-badge"></div>
-            <section class="card config-panel" style="margin-left: 10px;">
-                <h3 class="timeline-item-title">
-                    <span style="color: var(--accent-green);">Stap 2:</span> Formaat & Kwaliteit
-                </h3>
-                
-                <div id="pipeline-format-settings">
-                    <div class="form-row vertical-row">
-                        <label for="pipeline-media-type-select">Media Type</label>
+                <div class="form-row vertical-row">
+                    <label for="pipeline-media-type-select">Media Type</label>
+                    <div class="media-type-select-wrapper">
                         <select id="pipeline-media-type-select">
                             <option value="audio" selected>🎵 Audio</option>
                             <option value="video">🎬 Video</option>
                         </select>
                     </div>
-                    
-                    <!-- Pipeline Audio/Video settings toggled dynamically -->
-                    <div id="pipeline-audio-options" style="display: contents;">
-                        <div class="form-row vertical-row" style="margin-top: 12px;">
-                            <label for="pipeline-format-select">Audio Format</label>
-                            <select id="pipeline-format-select">
-                                <option value="mp3" selected>MP3</option>
-                                <option value="m4a">M4A</option>
-                                <option value="wav">WAV</option>
-                                <option value="opus">Opus</option>
-                                <option value="best">Original (No Transcoding)</option>
-                            </select>
-                        </div>
-                        <div class="form-row vertical-row" style="margin-top: 12px;">
-                            <label for="pipeline-quality-select">Audio Quality</label>
-                            <select id="pipeline-quality-select">
-                                <option value="320k">320 kbps (best transcode)</option>
-                                <option value="256k">256 kbps (very high)</option>
-                                <option value="192k" selected>192 kbps (high)</option>
-                                <option value="128k">128 kbps (medium)</option>
-                            </select>
-                        </div>
+                </div>
+
+                <!-- Pipeline Audio/Video settings toggled dynamically -->
+                <div id="pipeline-audio-options" style="display: contents;">
+                    <div class="form-row vertical-row" style="margin-top: 12px;">
+                        <label for="pipeline-format-select">Audio Format</label>
+                        <select id="pipeline-format-select">
+                            <option value="mp3" selected>MP3</option>
+                            <option value="m4a">M4A</option>
+                            <option value="wav">WAV</option>
+                            <option value="opus">Opus</option>
+                            <option value="best">Original (No Transcoding)</option>
+                        </select>
                     </div>
-                    
-                    <div id="pipeline-video-options" style="display: none;">
-                        <div class="form-row vertical-row" style="margin-top: 12px;">
-                            <label for="pipeline-video-format">Video Format</label>
-                            <select id="pipeline-video-format">
-                                <option value="mp4" selected>MP4</option>
-                                <option value="webm">WebM</option>
-                                <option value="mkv">MKV</option>
-                            </select>
-                        </div>
-                        <div class="form-row vertical-row" style="margin-top: 12px;">
-                            <label for="pipeline-video-quality">Video Quality</label>
-                            <select id="pipeline-video-quality">
-                                <option value="best" selected>Best Available</option>
-                                <option value="1080">1080p (Full HD)</option>
-                                <option value="720">720p (HD)</option>
-                                <option value="480">480p (SD)</option>
-                            </select>
-                        </div>
+                    <div class="form-row vertical-row" style="margin-top: 12px;">
+                        <label for="pipeline-quality-select">Audio Quality</label>
+                        <select id="pipeline-quality-select">
+                            <option value="320k">320 kbps (best transcode)</option>
+                            <option value="256k">256 kbps (very high)</option>
+                            <option value="192k" selected>192 kbps (high)</option>
+                            <option value="128k">128 kbps (medium)</option>
+                        </select>
                     </div>
                 </div>
-            </section>
-        </div>
 
-        <!-- Step 3: Sortering & AI Categorisation -->
-        <div class="timeline-item" id="timeline-step-3">
-            <div class="timeline-badge"></div>
-            <section class="card config-panel" style="margin-left: 10px;">
-                <h3 class="timeline-item-title">
-                    <span style="color: var(--accent-green);">Stap 3:</span> AI Sortering & Organisatie
+                <div id="pipeline-video-options" style="display: none;">
+                    <div class="form-row vertical-row" style="margin-top: 12px;">
+                        <label for="pipeline-video-format">Video Format</label>
+                        <select id="pipeline-video-format">
+                            <option value="mp4" selected>MP4</option>
+                            <option value="webm">WebM</option>
+                            <option value="mkv">MKV</option>
+                        </select>
+                    </div>
+                    <div class="form-row vertical-row" style="margin-top: 12px;">
+                        <label for="pipeline-video-quality">Video Quality</label>
+                        <select id="pipeline-video-quality">
+                            <option value="best" selected>Best Available</option>
+                            <option value="1080">1080p (Full HD)</option>
+                            <option value="720">720p (HD)</option>
+                            <option value="480">480p (SD)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 2: Organiser Card -->
+        <section class="card config-panel" id="pipeline-organiser-card" style="margin-top: 20px;">
+            <div class="step-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                <input type="checkbox" id="pipeline-enable-organiser" checked
+                    style="width: auto; margin: 0; cursor: pointer;">
+                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-color); cursor: pointer;"><label
+                        for="pipeline-enable-organiser" style="cursor: pointer;">Stap 2: AI Organiser & Sorter</label>
                 </h3>
-                
+            </div>
+
+            <div id="pipeline-organiser-settings">
                 <div class="form-row vertical-row">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <input type="checkbox" id="pipeline-enable-organiser" checked style="width: auto; margin: 0; cursor: pointer;">
-                        <label for="pipeline-enable-organiser" style="font-weight: 500; cursor: pointer;">Bestanden sorteren met AI (Stap 2 activeren)</label>
+                    <label>Uiteindelijke Doelmap</label>
+                    <div class="dir-row">
+                        <div class="dir-path" id="pipeline-target-path">Select target folder...</div>
+                        <button class="btn-browse" id="btn-pipeline-browse-target">Browse</button>
+                        <input type="file" id="pipeline-target-input" webkitdirectory directory style="display: none;">
                     </div>
                 </div>
 
-                <div id="pipeline-organiser-settings">
-                    <div class="form-row vertical-row" style="margin-top: 12px;">
-                        <label>Uiteindelijke Doelmap</label>
-                        <div class="dir-row">
-                            <div class="dir-path" id="pipeline-target-path">Select target folder...</div>
-                            <button class="btn-browse" id="btn-pipeline-browse-target">Browse</button>
-                            <input type="file" id="pipeline-target-input" webkitdirectory directory style="display: none;">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row vertical-row" style="margin-top: 12px;">
-                        <label for="pipeline-mode-select">Organisatiemethode</label>
+                <div class="form-row vertical-row">
+                    <label for="pipeline-mode-select">Organisatiemethode</label>
+                    <div class="media-type-select-wrapper">
                         <select id="pipeline-mode-select">
                             <option value="classic_periods" selected>Muziek - Klassieke Periodes (Standaard)</option>
                             <option value="artist_album">Muziek - Artiest / Album</option>
@@ -298,42 +123,44 @@
                             <option value="flat">Geen submappen (Platte lijst)</option>
                         </select>
                     </div>
-                    
-                    <div class="form-row checkbox-row" style="margin-top: 16px;">
-                        <input type="checkbox" id="pipeline-delete-source" checked>
-                        <label for="pipeline-delete-source">Verplaatsen en tijdelijke bestanden opruimen</label>
-                    </div>
-                    
-                    <div class="form-row checkbox-row" style="margin-top: 10px;">
-                        <input type="checkbox" id="pipeline-use-shazam">
-                        <label for="pipeline-use-shazam">Shazam Audio Fallback gebruiken</label>
-                    </div>
                 </div>
-            </section>
-        </div>
-        
-        <!-- Action triggers -->
-        <div class="actions" style="margin-left: 30px; margin-top: 10px;">
-            <button class="btn-download" id="btn-pipeline-start" style="padding: 12px 32px; font-size: 1.05rem;">Start Pipeline Workflow</button>
+
+                <div class="form-row checkbox-row" style="margin-top: 10px;">
+                    <input type="checkbox" id="pipeline-delete-source" checked>
+                    <label for="pipeline-delete-source">Verplaatsen en tijdelijke bestanden opruimen</label>
+                </div>
+
+                <div class="form-row checkbox-row" style="margin-top: 10px;">
+                    <input type="checkbox" id="pipeline-use-shazam">
+                    <label for="pipeline-use-shazam">Shazam Audio Fallback gebruiken</label>
+                </div>
+            </div>
+        </section>
+
+        <!-- Action buttons for starting or cancelling the pipeline -->
+        <div class="actions" style="margin-top: 20px;">
+            <button class="btn-download" id="btn-pipeline-start">Start Pipeline</button>
             <button class="btn-cancel" id="btn-pipeline-cancel" style="display: none;" disabled>Cancel</button>
         </div>
     </div>
-    
-    <!-- Middle Column: Preview list items -->
-    <div class="left-column" style="flex: 1.1;">
+
+    <!-- Middle/Right Column: Preview list items -->
+    <div class="left-column" style="flex: 1.2;">
         <section class="card preview-panel" id="pipeline-preview-panel" style="height: 100%;">
             <div class="preview-header">
-                <span class="preview-title">Playlist Preview</span>
+                <span class="preview-title">Preview</span>
+                <button class="btn-secondary" id="btn-pipeline-load-info">Info laden</button>
             </div>
-            
+
             <!-- Preview Empty State -->
             <div class="preview-empty" id="pipeline-state-empty">
                 <svg class="preview-empty-icon" viewBox="0 0 24 24" width="44" height="44">
-                    <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9.5 16.5l7-4.5-7-4.5v9z"/>
+                    <path
+                        d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9.5 16.5l7-4.5-7-4.5v9z" />
                 </svg>
-                <p>Vul hierboven een YouTube URL in om de afspeellijst te scannen</p>
+                <p>Paste a YouTube URL to see a preview</p>
             </div>
-            
+
             <!-- Playlist Preview State -->
             <div id="pipeline-state-playlist" class="preview-state-playlist" style="display: none;">
                 <div class="track-list-header">
@@ -347,7 +174,7 @@
             </div>
         </section>
     </div>
-    
+
     <!-- Right Column: Status info, Progress bars, and Console Logs -->
     <div class="output-panel" id="pipeline-progress-section" style="flex: 1.3;">
         <!-- Overall Status Card -->
@@ -363,10 +190,10 @@
                 <div class="progress-bar-fill" id="pipeline-progress-fill"></div>
             </div>
         </section>
-        
+
         <!-- Track progress circular loaders -->
         <section class="card active-progress-container" id="pipeline-active-progress"></section>
-        
+
         <!-- Console Logs card -->
         <div class="console" id="pipeline-console" role="log"></div>
     </div>

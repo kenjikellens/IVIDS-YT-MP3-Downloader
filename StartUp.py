@@ -108,43 +108,94 @@ def clean_filename(name):
         return "Onbekend"
     return "".join(c for c in name if c not in '<>:"/\\|?*').strip()
 
-def finalize_file(file_info, ai_data, target_dir):
+def finalize_file(file_info, ai_data, target_dir, organize_mode="classic_periods", delete_source=False):
+    """
+    Finalizes the processing of a media file by determining its output path based on the selected 
+    organization mode, copying or moving the file, and updating ID3 tags if it's an MP3.
+
+    :param file_info: Dictionary containing 'full_path', 'filename', and 'folder_name'.
+    :param ai_data: Dictionary containing metadata returned by Gemini/Shazam or custom fields.
+    :param target_dir: Base directory where organized files should be placed.
+    :param organize_mode: Sorter pattern template ('classic_periods', 'artist_album', 'channel', 'flat').
+    :param delete_source: If True, the original source file is deleted after copying.
+    """
     source_path = file_info.get("full_path")
     if not os.path.exists(source_path):
         raise Exception(f"Bronbestand bestaat niet: {source_path}")
         
     dest_dirs = []
     new_filename = ""
+    ext = os.path.splitext(source_path)[1]
     
-    if ai_data.get("unknown", False):
+    # Resolve metadata fields
+    artist = clean_filename(ai_data.get("artiesten") or ai_data.get("artiest(en)") or ai_data.get("artiest") or "Onbekend")
+    title = clean_filename(ai_data.get("titel") or "Onbekend")
+    album = clean_filename(ai_data.get("album") or "")
+    
+    if ai_data.get("unknown", False) and organize_mode != "channel":
         dest_dirs = [os.path.join(target_dir, "onbekend")]
         new_filename = file_info.get("filename")
     else:
-        year_val = ai_data.get("jaar")
-        year_cat = get_year_category(year_val)
-        original_folder = file_info.get("folder_name", "")
-        
-        artist = clean_filename(ai_data.get("artiesten") or ai_data.get("artiest(en)") or "Onbekend")
-        title = clean_filename(ai_data.get("titel") or "Onbekend")
-        ext = os.path.splitext(source_path)[1]
-        new_filename = f"{artist} - {title}{ext}"
-        
-        dest_dirs = [os.path.join(target_dir, year_cat)]
-        
-        is_year_folder = any(group["cat"] == original_folder for group in YEAR_CATEGORIES) or original_folder.lower() == 'jaar'
-        if original_folder and not is_year_folder:
-            dest_dirs.append(os.path.join(target_dir, original_folder))
+        if organize_mode == "artist_album":
+            if album:
+                dest_dirs = [os.path.join(target_dir, artist, album)]
+            else:
+                dest_dirs = [os.path.join(target_dir, artist)]
+            new_filename = f"{artist} - {title}{ext}"
             
+        elif organize_mode == "channel":
+            # Extract uploader/channel info from ai_data or tags
+            channel = clean_filename(
+                ai_data.get("channel") or 
+                ai_data.get("uploader") or 
+                file_info.get("tags", {}).get("artist") or 
+                "Onbekend Kanaal"
+            )
+            dest_dirs = [os.path.join(target_dir, channel)]
+            # If we resolved a clear artist and title, use it. Otherwise, keep the original name.
+            if not ai_data.get("unknown", False) and (ai_data.get("artiesten") or ai_data.get("artiest(en)")):
+                new_filename = f"{artist} - {title}{ext}"
+            else:
+                new_filename = file_info.get("filename")
+                
+        elif organize_mode == "flat":
+            dest_dirs = [target_dir]
+            if not ai_data.get("unknown", False):
+                new_filename = f"{artist} - {title}{ext}"
+            else:
+                new_filename = file_info.get("filename")
+                
+        else:  # "classic_periods" (Standaard)
+            year_val = ai_data.get("jaar")
+            year_cat = get_year_category(year_val)
+            original_folder = file_info.get("folder_name", "")
+            new_filename = f"{artist} - {title}{ext}"
+            dest_dirs = [os.path.join(target_dir, year_cat)]
+            
+            is_year_folder = any(group["cat"] == original_folder for group in YEAR_CATEGORIES) or original_folder.lower() == 'jaar'
+            if original_folder and not is_year_folder:
+                dest_dirs.append(os.path.join(target_dir, original_folder))
+                
     final_path = ""
+    copied_successfully = False
     for dest_dir in dest_dirs:
         if not os.path.exists(dest_dir):
             os.makedirs(dest_dir, exist_ok=True)
         dest_path = os.path.join(dest_dir, new_filename)
+        
+        # Guard: do not copy if source and destination are the exact same file
+        if os.path.abspath(source_path) == os.path.abspath(dest_path):
+            final_path = dest_path
+            copied_successfully = True
+            continue
+            
         shutil.copyfile(source_path, dest_path)
         final_path = dest_path
+        copied_successfully = True
         
-        ext = os.path.splitext(dest_path)[1].lower()
-        if ext == '.mp3' and not ai_data.get("unknown", False):
+        # Write tags if MP3 and not unknown
+        ext_lower = os.path.splitext(dest_path)[1].lower()
+        if ext_lower == '.mp3' and not ai_data.get("unknown", False):
             try:
                 from mutagen.easyid3 import EasyID3
                 try:
@@ -165,6 +216,16 @@ def finalize_file(file_info, ai_data, target_dir):
                 audio.save()
             except Exception as tag_err:
                 add_log(f"[Warning] Failed to write ID3 tags: {str(tag_err)}")
+
+    # Clean up source file if requested and successfully copied to destinations
+    if delete_source and copied_successfully:
+        # Check if the source path was not one of the final destinations
+        dest_paths_abs = [os.path.abspath(os.path.join(d, new_filename)) for d in dest_dirs]
+        if os.path.abspath(source_path) not in dest_paths_abs:
+            try:
+                os.remove(source_path)
+            except Exception as remove_err:
+                add_log(f"[Warning] Failed to delete source file {source_path}: {str(remove_err)}")
                 
 
 
@@ -773,12 +834,20 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
 
     def handle_finalize(self, post_data):
+        """
+        Handles POST /api/finalize requests.
+        Parses the JSON request body containing file_info, ai_data, target_dir, 
+        organize_mode, and delete_source, then calls finalize_file.
+        """
         try:
             params = json.loads(post_data.decode('utf-8'))
             file_info = params.get("file_info")
             ai_data = params.get("ai_data")
             target_dir = params.get("target_dir")
-            finalize_file(file_info, ai_data, target_dir)
+            organize_mode = params.get("organize_mode", "classic_periods")
+            delete_source = params.get("delete_source", False)
+            
+            finalize_file(file_info, ai_data, target_dir, organize_mode=organize_mode, delete_source=delete_source)
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
