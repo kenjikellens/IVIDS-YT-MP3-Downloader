@@ -749,6 +749,11 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
         elif path == "/api/log_stream":
             self.handle_log_stream()
         else:
+            if path == "/favicon.ico":
+                self.send_response(204)
+                self.end_headers()
+                return
+            
             # Fallback to serving index.html or other static files in ui/
             if path == "/" or path == "":
                 self.path = "/ui/index.html"

@@ -47,13 +47,42 @@ async function navigateTo(routeKey) {
     var container = document.getElementById('main-content');
     if (!container) return;
 
-    // Show loading spinner during fetch
-    container.innerHTML = `
-        <div style="display: flex; height: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 16px;">
+    // Initialize shared loading spinner if not exists
+    var loadingSpinner = document.getElementById('page-loading-spinner');
+    if (!loadingSpinner) {
+        // Clear initial content (like the hardcoded spinner)
+        if (!container.querySelector('.page-container')) {
+            container.innerHTML = '';
+        }
+        loadingSpinner = document.createElement('div');
+        loadingSpinner.id = 'page-loading-spinner';
+        loadingSpinner.style.cssText = 'display: none; height: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 16px;';
+        loadingSpinner.innerHTML = `
             <div class="spinner"></div>
             <p>Loading...</p>
-        </div>
-    `;
+        `;
+        container.appendChild(loadingSpinner);
+    }
+
+    // Hide all existing page containers
+    var allPages = container.querySelectorAll('.page-container');
+    allPages.forEach(function(page) {
+        page.style.display = 'none';
+    });
+
+    var routeContainerId = 'route-container-' + routeKey;
+    var targetContainer = document.getElementById(routeContainerId);
+
+    if (targetContainer) {
+        // Page already loaded, just show it
+        targetContainer.style.display = 'flex';
+        updateSidebarActiveState(routeKey);
+        closeSidebar();
+        return;
+    }
+
+    // Show loading spinner during fetch
+    loadingSpinner.style.display = 'flex';
 
     try {
         // Cache-busting parameter to prevent Electron caching HTML fragment files
@@ -61,7 +90,14 @@ async function navigateTo(routeKey) {
         if (!response.ok) throw new Error("Could not fetch page fragment: " + route.url);
         var html = await response.text();
 
-        container.innerHTML = html;
+        targetContainer = document.createElement('div');
+        targetContainer.id = routeContainerId;
+        targetContainer.className = 'page-container';
+        targetContainer.style.cssText = 'display: flex; flex-direction: column; flex: 1; height: 100%;';
+        targetContainer.innerHTML = html;
+
+        loadingSpinner.style.display = 'none';
+        container.appendChild(targetContainer);
 
         // Run the specific page controller's lifecycle initialization
         await route.init();
@@ -80,12 +116,15 @@ async function navigateTo(routeKey) {
         updateSidebarActiveState(routeKey);
 
     } catch (err) {
-        container.innerHTML = `
-            <div style="padding: 24px; color: var(--accent-red); text-align: center;">
-                <h3>Error Loading Page</h3>
-                <p>${err.message}</p>
-            </div>
+        loadingSpinner.style.display = 'none';
+        var errorDiv = document.createElement('div');
+        errorDiv.className = 'page-container';
+        errorDiv.style.cssText = 'padding: 24px; color: var(--accent-red); text-align: center;';
+        errorDiv.innerHTML = `
+            <h3>Error Loading Page</h3>
+            <p>${err.message}</p>
         `;
+        container.appendChild(errorDiv);
     }
 
     closeSidebar();

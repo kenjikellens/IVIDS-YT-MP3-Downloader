@@ -447,9 +447,10 @@ async function startDownload() {
         });
 
         source.addEventListener('error', function(e) {
-            onComplete(false, 'Connection lost or stream terminated.');
-            source.close();
-            activeEventSource = null;
+            if (typeof addLog === 'function') {
+                addLog("[Waarschuwing] Netwerkverbinding gepauzeerd/verbroken. Bezig met herverbinden...");
+            }
+            // Do not close; let EventSource automatically reconnect.
         });
     }
 }

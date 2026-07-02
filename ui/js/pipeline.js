@@ -759,10 +759,10 @@ function connectPipelineOrganiserLogStream() {
         }
     };
     pipelineEventSource.onerror = function() {
-        if (pipelineEventSource) {
-            pipelineEventSource.close();
-            pipelineEventSource = null;
+        if (typeof addPipelineLog === 'function') {
+            addPipelineLog("[Waarschuwing] Netwerkverbinding gepauzeerd/verbroken. Bezig met herverbinden...");
         }
+        // Do not close; let EventSource automatically reconnect.
     };
 }
 

@@ -122,6 +122,21 @@ async function initSettingsPage() {
         });
     }
 
+    var orgConcurrencySelect = document.getElementById('settings-org-concurrency');
+    if (orgConcurrencySelect) {
+        var savedOrgConcurrency = '1';
+        try {
+            savedOrgConcurrency = localStorage.getItem('organiser-concurrency') || '1';
+        } catch (e) {}
+        orgConcurrencySelect.value = savedOrgConcurrency;
+
+        orgConcurrencySelect.addEventListener('change', function() {
+            try {
+                localStorage.setItem('organiser-concurrency', orgConcurrencySelect.value);
+            } catch (e) {}
+        });
+    }
+
     // 6. Load initial language preference
     var langSelect = document.getElementById('settings-lang-select');
     if (langSelect) {

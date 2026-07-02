@@ -1095,6 +1095,8 @@ html, body {
     border-radius: 8px;
     background: linear-gradient(145deg, var(--bg-card), rgba(24, 24, 27, 0.75));
     transition: border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 /*
@@ -2355,7 +2357,8 @@ html, body {
     margin-top: 16px;
     padding-top: 16px;
     border-top: 1px solid var(--border-default);
-    max-height: 250px;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
 }
 

@@ -398,7 +398,11 @@ async function startOrganiser() {
             }
         };
 
-        const concurrency = 1;
+        let concurrency = 1;
+        try {
+            concurrency = parseInt(localStorage.getItem('organiser-concurrency')) || 1;
+        } catch(e) {}
+        concurrency = Math.max(1, Math.min(4, concurrency));
         let currentIndex = 0;
         
         const worker = async () => {

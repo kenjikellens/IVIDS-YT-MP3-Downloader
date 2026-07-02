@@ -63,7 +63,7 @@ async def recognize_audio(filepath):
                 
                 logger.info(f"[Gemini Audio] Analyseren door Gemini 3 Flash...")
                 res = client.models.generate_content(
-                    model="gemini-3-flash-preview",
+                    model="gemini-3-flash",
                     contents=[prompt, media_file]
                 )
                 

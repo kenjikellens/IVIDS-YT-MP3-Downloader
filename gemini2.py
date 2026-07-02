@@ -17,11 +17,11 @@ load_dotenv()
 API_KEY = os.getenv("GEMINI_KEY_2")
 # Modellen voor de Free Key (in volgorde van voorkeur/prioriteit)
 MODELS = [
-    "gemini-2.5-flash",
     "gemini-3.1-flash-lite",
-    "gemini-3-flash-preview",
-    "gemini-2.5-pro",
-    "gemini-2.5-flash-lite"
+    "gemini-2.5-flash-lite",
+    "gemini-3-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro"
 ]
 
 class MusicMetadata(BaseModel):
@@ -39,17 +39,13 @@ class MusicMetadata(BaseModel):
 def get_thinking_config(model_name: str) -> types.ThinkingConfig | None:
     """
     Bepaalt de juiste thinking_config op basis van de modelnaam en versie.
-    - Gemini 3.x/3.5 Flash/Pro -> LOW
-    - Gemini 3.x/3.5 Flash Lite -> MEDIUM
-    - Gemini 2.5 modellen -> 1024 tokens budget
+    - Gemini 3.x/3.5 Flash/Pro/Lite -> LOW
+    - Gemini 2.5 modellen -> 256 tokens budget
     """
     if "gemini-3" in model_name:
-        if "lite" in model_name:
-            return types.ThinkingConfig(thinking_level=types.ThinkingLevel.MEDIUM)
-        else:
-            return types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW)
+        return types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW)
     elif "gemini-2.5" in model_name:
-        return types.ThinkingConfig(thinking_budget=1024)
+        return types.ThinkingConfig(thinking_budget=256)
     return None
 
 def extract_json(raw_text: str) -> dict:
