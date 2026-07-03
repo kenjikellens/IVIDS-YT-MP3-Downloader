@@ -346,19 +346,23 @@ html, body {
     display: flex;
 }
 
-/* Page heading wrapper grouping titles and visual tools */
+/* Page heading wrapper grouping titles and visual tools, centered for a clean look */
 .page-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
+    justify-content: center;
+    margin-bottom: 16px;
 }
 
-/* Page main titles */
+/* Page main titles formatted with a premium green color, uppercase, and styled with a modern font */
 .page-header h1 {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text-primary);
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent-green);
+    font-family: 'Outfit', 'Inter', 'Segoe UI', sans-serif;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(34, 197, 94, 0.15);
 }
 
 /* Color theme toggle buttons */
@@ -2073,11 +2077,12 @@ html, body {
 /* 
  * Active progress container listing individual concurrent downloads.
  * Styled as a card, only visible when it contains active track items.
+ * Uses flex: 0 1 auto to ensure it fits the contents and stays as small/fitting as possible instead of spreading/stretching.
  */
 .active-progress-container {
     max-height: 150px;
     overflow-y: auto;
-    flex: 1;
+    flex: 0 1 auto;
 }
 
 /* Hide active progress card completely when empty */
@@ -2313,17 +2318,21 @@ html, body {
     }
 }
 
-/* Stretch output cards when CLI console is hidden */
+/* Keep overall status card size compact and fitting when CLI console is hidden, preventing stretching */
 .hide-cli .overall-status-card {
-    flex: 1;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
 }
 
+/*
+ * Style for active progress container when the CLI output is hidden.
+ * Ensures the container remains flexible (flex: 0 1 auto) and only grows/fits to hold its child items.
+ */
 .hide-cli .active-progress-container {
     max-height: none;
-    flex: 1;
+    flex: 0 1 auto;
 }
 
 /* If active progress is visible, only active progress stretches and status card stays normal */
