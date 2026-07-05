@@ -2347,6 +2347,200 @@ html, body {
 /* ============================================================ */
 
 /* Specific grid column positioning for the Music Organiser page columns */
+#page-organiser { grid-template-columns: 1fr 1.15fr; }
+#page-organiser #organiser-progress-section { grid-column: 2; }
+@media (max-width: 768px) {
+  #page-organiser { grid-template-columns: 1fr; }
+  #page-organiser #organiser-progress-section { grid-column: 1; }
+}
+
+/*
+ * .overall-status-card .active-progress-container
+ * Override to layout and embed individual loaders inside the overall status card card borders.
+ */
+.overall-status-card .active-progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-default);
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/*
+ * .api-badge
+ * Monochromatic, neutral status badge showing the active API or system action.
+ */
+.api-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    background-color: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-default);
+}
+
+/* Light theme support for api-badge */
+.light-theme .api-badge {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: var(--text-secondary);
+}
+
+/*
+ * .status-number-container
+ * Compact status indicator pill representing batch count ratios (e.g. 2/10).
+ */
+.status-number-container {
+    background-color: rgba(99, 102, 241, 0.12);
+    color: var(--status-setup-color);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Light theme support for status-number-container */
+.light-theme .status-number-container {
+    background-color: rgba(79, 70, 229, 0.08);
+}
+
+/*
+ * .track-progress-circle .exclamation-path
+ * Vector path displaying a yellow exclamation mark icon for unknown metadata states.
+ */
+.track-progress-circle .exclamation-path {
+    fill: none;
+    stroke: #fbbf24;
+    stroke-width: 4;
+    stroke-linecap: round;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Displays the exclamation mark icon when track is in unknown state */
+.track-progress-block.unknown .track-progress-circle .exclamation-path {
+    opacity: 1;
+}
+
+/* Hides the green loader circle-fill indicator for complete, failed, and unknown states */
+.track-progress-block.complete .track-progress-circle .circle-fill,
+.track-progress-block.failed .track-progress-circle .circle-fill,
+.track-progress-block.unknown .track-progress-circle .circle-fill {
+    opacity: 0;
+}
+
+/* Soft colored status backing circles for complete, failed, and unknown states */
+.track-progress-block.complete .track-progress-circle .circle-bg {
+    stroke: rgba(34, 197, 94, 0.15);
+}
+.track-progress-block.failed .track-progress-circle .circle-bg {
+    stroke: rgba(239, 68, 68, 0.15);
+}
+.track-progress-block.unknown .track-progress-circle .circle-bg {
+    stroke: rgba(245, 158, 11, 0.15);
+}
+
+/* Ensures progress fill ring starts at 12 o'clock while icons stay upright */
+.track-progress-circle .circle-fill {
+    transform: rotate(-90deg);
+    transform-origin: center;
+}
+
+/*
+ * .checkbox-row
+ * Layout wrapper aligning premium custom checkbox inputs and their labels.
+ */
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0;
+    cursor: pointer;
+}
+
+/* Custom checkbox input styling replacing default browser checkboxes */
+.checkbox-row input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    background-color: var(--bg-input);
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.checkbox-row input[type="checkbox"]:hover {
+    border-color: var(--border-hover);
+}
+
+.checkbox-row input[type="checkbox"]:checked {
+    background-color: var(--accent-green);
+    border-color: var(--accent-green);
+}
+
+/* Vector checkmark symbol rendered inside custom checked state */
+.checkbox-row input[type="checkbox"]:checked::after {
+    content: "";
+    width: 5px;
+    height: 9px;
+    border: solid #ffffff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    position: relative;
+    top: -1px;
+}
+
+/* Text label styles for custom checkboxes */
+.checkbox-row label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
+/* GPU rendering optimizations */
+.progress-fill,
+.pipeline-progress-fill,
+.organiser-progress-fill {
+    will-change: width;
+}
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/*
+ * Style for active progress container when the CLI output is hidden.
+ * Ensures the container remains flexible (flex: 0 1 auto) and only grows/fits to hold its child items.
+ */
+.hide-cli .active-progress-container {
+    max-height: none;
+    flex: 0 1 auto;
+}
+
+/* If active progress is visible, only active progress stretches and status card stays normal */
+.hide-cli .overall-status-card:has(~ .active-progress-container:not(:empty)) {
+    flex: 0 0 auto;
+    display: block;
+}
+
+
+/* ============================================================ */
+/* MUSIC ORGANISER REDESIGNED STATUS CARD & LOADERS SPECIFIC    */
+/* ============================================================ */
+
+/* Specific grid column positioning for the Music Organiser page columns */
 #page-organiser #organiser-progress-section {
     grid-column: 2;
 }
@@ -2521,5 +2715,271 @@ html, body {
     will-change: transform;
 }
 
+/* ===== Pipeline Page Layout ===== */
+/* 2-koloms grid: timeline configuratie links, console en status rechts */
+.pipeline-layout {
+    grid-template-columns: 1.2fr 1fr;
+}
 
+/* Rechterkant: console en status op kolom 2 */
+.pipeline-layout .output-panel {
+    grid-column: 2;
+    grid-row: 1;
+}
 
+/* Linkerkant: configuratie timeline met stappen */
+.pipeline-config-column {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Verwijder inline margin-left op timeline cards */
+.pipeline-config-column .config-panel {
+    grid-column: auto;
+    grid-row: auto;
+}
+
+/* Pipeline action buttons positioning */
+.pipeline-config-column .actions {
+    margin-left: 30px;
+    margin-top: 10px;
+}
+
+/* Horizontal Pipeline visual path banner */
+.pipeline-progress-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    padding: 20px 32px;
+    margin-bottom: 24px;
+    position: relative;
+}
+.light-theme .pipeline-progress-banner {
+    background-color: #f4f4f5;
+    border-color: #d4d4d8;
+}
+.pipeline-step-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 2;
+    position: relative;
+    flex: 1;
+}
+.pipeline-step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--bg-app);
+    border: 2px solid var(--border-default);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+}
+.light-theme .pipeline-step-circle {
+    background-color: #ffffff;
+}
+.pipeline-step-node.active .pipeline-step-circle {
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+}
+.pipeline-step-node.completed .pipeline-step-circle {
+    background-color: var(--accent-green);
+    border-color: var(--accent-green);
+    color: #ffffff;
+}
+.pipeline-step-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color 0.3s ease;
+}
+.pipeline-step-node.active .pipeline-step-label {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+.pipeline-step-node.completed .pipeline-step-label {
+    color: var(--accent-green);
+}
+.pipeline-connector-line {
+    position: absolute;
+    top: 38px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background-color: var(--border-default);
+    z-index: 1;
+}
+.pipeline-connector-progress {
+    height: 100%;
+    width: 0%;
+    background-color: var(--accent-green);
+    transition: width 0.5s ease;
+}
+
+/* Vertical timeline sidebar layouts */
+.timeline-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+    position: relative;
+    padding-left: 20px;
+}
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    top: 15px;
+    bottom: 15px;
+    left: 4px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--border-default) 80%, rgba(0,0,0,0) 100%);
+    z-index: 1;
+}
+.timeline-item {
+    position: relative;
+    margin-bottom: 24px;
+}
+.timeline-badge {
+    position: absolute;
+    left: -24px;
+    top: 12px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--bg-card);
+    border: 2px solid var(--border-default);
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+.timeline-item.active .timeline-badge {
+    background-color: var(--accent-green);
+    border-color: var(--accent-green);
+    box-shadow: 0 0 8px var(--accent-green);
+}
+.timeline-item-title {
+    font-size: 1.15rem;
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Modal Backdrop Overlay */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(9, 9, 11, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.modal-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Modal Content Container */
+.modal-backdrop .modal-content {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+    overflow: hidden;
+}
+
+.modal-backdrop.visible .modal-content {
+    transform: scale(1);
+}
+
+.modal-backdrop .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-default);
+}
+
+.modal-backdrop .modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.modal-backdrop .btn-close-modal {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.15s;
+}
+
+.modal-backdrop .btn-close-modal:hover {
+    color: var(--text-primary);
+}
+
+.modal-backdrop .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+}
+
+.modal-backdrop .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-default);
+    background-color: rgba(9, 9, 11, 0.1);
+}
+
+/* Pipeline Responsive Layouts */
+@media (max-width: 768px) {
+    /* Pipeline valt terug naar enkele kolom */
+    .pipeline-layout {
+        grid-template-columns: 1fr;
+    }
+    .pipeline-config-column,
+    .pipeline-layout .output-panel {
+        grid-column: 1;
+        grid-row: auto;
+    }
+}

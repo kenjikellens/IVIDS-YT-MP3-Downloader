@@ -125,8 +125,6 @@ async function startOrganiser() {
 
     var startBtn = document.getElementById('btn-organiser-start');
     var cancelBtn = document.getElementById('btn-organiser-cancel');
-    var resultsList = document.getElementById('organiser-results');
-    var trackCount = document.getElementById('organiser-track-count');
 
     if (startBtn) startBtn.style.display = 'none';
     if (cancelBtn) {
@@ -134,7 +132,6 @@ async function startOrganiser() {
         cancelBtn.disabled = false;
         cancelBtn.textContent = getTranslation('home_cancel', 'Stop');
     }
-    if (resultsList) resultsList.innerHTML = '';
     
     organiserShouldStop = false;
     organiserActiveControllers = [];
@@ -180,10 +177,8 @@ async function startOrganiser() {
 
         var files = scanData.files || [];
         if (organiserTrackText) organiserTrackText.textContent = `0 / ${files.length}`;
-        if (trackCount) trackCount.textContent = `0 / ${files.length} items processed`;
         
         if (files.length === 0) {
-            if (resultsList) resultsList.innerHTML = "<div class='organiser-result-item'>No new files found.</div>";
             finishOrganiser();
             if (organiserCard) {
                 organiserCard.classList.remove('status-setup');
@@ -205,22 +200,11 @@ async function startOrganiser() {
         var processedCount = 0;
 
         const processFile = async (file, index, signal) => {
-            var item = document.createElement('div');
-            item.className = 'organiser-result-item';
-            item.innerHTML = `
-                <div class="organiser-item-name">[${index+1}/${files.length}] ${file.filename}</div>
-                <div class="organiser-item-detail" id="org-status-${index}">Waiting...</div>
-            `;
-            if (resultsList) resultsList.prepend(item);
-            var statusEl = item.querySelector(`#org-status-${index}`);
-
             // Initialize track progress loader
             updateOrganiserProgress(index, file.filename, 'Preparing', 'active', 10);
 
             try {
                 if (organiserShouldStop) throw new Error("Cancelled");
-
-                if (statusEl) statusEl.textContent = "AI Query...";
 
                 const modules = [
                     "gemini",
@@ -311,7 +295,6 @@ async function startOrganiser() {
 
                 if (!qData) {
                     addOrganiserLog(`AI text matching failed, attempting Shazam Audio fallback for: ${file.filename}...`);
-                    if (statusEl) statusEl.textContent = "AI Audio Query...";
                     updateOrganiserProgress(index, file.filename, 'Shazam API', 'active', 75);
 
                     const shazamResponse = await fetch('/api/gemini', {
@@ -347,7 +330,6 @@ async function startOrganiser() {
 
                 if (organiserShouldStop) throw new Error("Cancelled");
 
-                if (statusEl) statusEl.textContent = `Moving & tagging...`;
                 updateOrganiserProgress(index, file.filename, 'Moving', 'active', 90);
 
                 var organizeModeSelect = document.getElementById('organiser-mode-select');
@@ -371,9 +353,6 @@ async function startOrganiser() {
                 var fData = await fRes.json();
                 if (fData.error) throw new Error(fData.error);
 
-                item.classList.add('success');
-                if (statusEl) statusEl.textContent = `Success`;
-
                 if (qData.unknown) {
                     updateOrganiserProgress(index, file.filename, 'Unknown', 'unknown', 100);
                 } else {
@@ -381,12 +360,8 @@ async function startOrganiser() {
                 }
             } catch (err) {
                 if (err.name === 'AbortError' || err.message === 'Cancelled') {
-                    item.classList.add('warning');
-                    if (statusEl) statusEl.textContent = "Cancelled";
                     updateOrganiserProgress(index, file.filename, 'Cancelled', 'failed', 0);
                 } else {
-                    item.classList.add('failed');
-                    if (statusEl) statusEl.textContent = "Error: " + err.message;
                     updateOrganiserProgress(index, file.filename, 'Failed', 'failed', 0);
                 }
             } finally {
@@ -394,7 +369,6 @@ async function startOrganiser() {
                 var overallPercent = Math.round((processedCount / files.length) * 100);
                 if (organiserTrackText) organiserTrackText.textContent = `${processedCount} / ${files.length} (${overallPercent}%)`;
                 if (organiserProgressFill) organiserProgressFill.style.width = overallPercent + '%';
-                if (trackCount) trackCount.textContent = `${processedCount} / ${files.length} items processed`;
             }
         };
 

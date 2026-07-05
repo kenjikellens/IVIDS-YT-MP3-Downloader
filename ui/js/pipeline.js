@@ -112,6 +112,42 @@ function initPipelinePage() {
         });
     }
 
+    // Modal open/close listeners
+    var btnOpenPreview = document.getElementById('btn-pipeline-open-preview');
+    var btnClosePreview = document.getElementById('btn-pipeline-close-preview');
+    var btnConfirmPreview = document.getElementById('btn-pipeline-confirm-preview');
+    var previewModal = document.getElementById('pipeline-preview-modal');
+
+    if (btnOpenPreview) {
+        btnOpenPreview.addEventListener('click', function() {
+            if (previewModal) {
+                previewModal.classList.add('visible');
+                // Force a scroll event to trigger virtual scrolling rendering
+                var listEl = document.getElementById('pipeline-track-list');
+                if (listEl) {
+                    listEl.dispatchEvent(new Event('scroll'));
+                }
+            }
+        });
+    }
+    if (btnClosePreview) {
+        btnClosePreview.addEventListener('click', function() {
+            if (previewModal) previewModal.classList.remove('visible');
+        });
+    }
+    if (btnConfirmPreview) {
+        btnConfirmPreview.addEventListener('click', function() {
+            if (previewModal) previewModal.classList.remove('visible');
+        });
+    }
+    if (previewModal) {
+        previewModal.addEventListener('click', function(e) {
+            if (e.target === previewModal) {
+                previewModal.classList.remove('visible');
+            }
+        });
+    }
+
     // Restore saved paths
     try {
         var dlDir = localStorage.getItem('pipeline-download-dir') || '';
@@ -177,7 +213,24 @@ function updatePipelineMediaToggles() {
 async function loadPipelineMetadata() {
     var urlInput = document.getElementById('pipeline-url-input');
     var url = urlInput ? urlInput.value.trim() : '';
-    if (!url) return;
+    
+    var previewModal = document.getElementById('pipeline-preview-modal');
+    
+    if (!url) {
+        if (previewModal) {
+            previewModal.style.display = 'flex';
+            // Slight delay to allow display:flex to apply before opacity transition
+            setTimeout(() => previewModal.classList.add('visible'), 10);
+            
+            var trackList = document.getElementById('pipeline-track-list');
+            var trackCountText = document.getElementById('pipeline-track-count-text');
+            if (trackList) {
+                trackList.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;min-height:200px;color:var(--text-muted);font-weight:500;">Plak eerst een YouTube URL of Afspeellijst in Stap 1...</div>';
+            }
+            if (trackCountText) trackCountText.textContent = 'Geen URL opgegeven';
+        }
+        return;
+    }
 
     var btnLoad = document.getElementById('btn-pipeline-load-info');
     if (btnLoad) {
@@ -187,13 +240,17 @@ async function loadPipelineMetadata() {
 
     addPipelineLog("Fetching metadata details for URL...");
 
-    var previewEmpty = document.getElementById('pipeline-state-empty');
-    var previewPlaylist = document.getElementById('pipeline-state-playlist');
-    if (previewEmpty) {
-        previewEmpty.style.display = 'flex';
-        previewEmpty.innerHTML = '<div class="spinner"></div><p>Loading tracks metadata...</p>';
+    var statusEl = document.getElementById('pipeline-url-status');
+    var triggerContainer = document.getElementById('pipeline-preview-trigger-container');
+    
+    if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.style.color = 'var(--text-muted)';
+        statusEl.innerHTML = 'Afspeellijst analyseren...';
     }
-    if (previewPlaylist) previewPlaylist.style.display = 'none';
+    if (triggerContainer) {
+        triggerContainer.style.display = 'none';
+    }
 
     try {
         var res = await fetch('/api/fetch-metadata?url=' + encodeURIComponent(url));
@@ -208,20 +265,34 @@ async function loadPipelineMetadata() {
             pipelineLoadedTracksMap.set(t.id, t);
             pipelineSelectedTrackIds.add(t.id);
         });
+        
         renderPipelinePreview(pipelineLoadedTracks);
+        
+        if (statusEl) {
+            statusEl.style.display = 'none';
+        }
+        
+        // Open preview modal automatically on load success
+        var previewModal = document.getElementById('pipeline-preview-modal');
+        if (previewModal) {
+            previewModal.classList.add('visible');
+            // Force a scroll event to trigger virtual scrolling rendering
+            setTimeout(function() {
+                var listEl = document.getElementById('pipeline-track-list');
+                if (listEl) listEl.dispatchEvent(new Event('scroll'));
+            }, 100);
+        }
     } catch (err) {
         addPipelineLog("[Error] Failed loading metadata: " + err.message);
-        if (previewEmpty) {
-            previewEmpty.innerHTML = 
-                '<svg class="preview-empty-icon" viewBox="0 0 24 24" width="44" height="44">' +
-                    '<path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9.5 16.5l7-4.5-7-4.5v9z"/>' +
-                '</svg>' +
-                '<p style="color:var(--accent-red);">[Error] ' + err.message + '</p>';
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            statusEl.style.color = 'var(--accent-red)';
+            statusEl.textContent = '[Fout] ' + err.message;
         }
     } finally {
         if (btnLoad) {
             btnLoad.disabled = false;
-            btnLoad.textContent = 'Load Info';
+            btnLoad.textContent = 'Info laden';
         }
     }
 }
@@ -232,20 +303,16 @@ async function loadPipelineMetadata() {
  * @param {Array<Object>} tracks - List of tracks containing id, title, duration, channel.
  */
 function renderPipelinePreview(tracks) {
-    var previewEmpty = document.getElementById('pipeline-state-empty');
-    var previewPlaylist = document.getElementById('pipeline-state-playlist');
+    var triggerContainer = document.getElementById('pipeline-preview-trigger-container');
+    var countBadge = document.getElementById('pipeline-preview-count-badge');
     
     if (!tracks || tracks.length === 0) {
-        if (previewEmpty) {
-            previewEmpty.style.display = 'flex';
-            previewEmpty.innerHTML = '<p>No tracks or video information found.</p>';
-        }
-        if (previewPlaylist) previewPlaylist.style.display = 'none';
+        if (triggerContainer) triggerContainer.style.display = 'none';
         return;
     }
 
-    if (previewEmpty) previewEmpty.style.display = 'none';
-    if (previewPlaylist) previewPlaylist.style.display = 'block';
+    if (countBadge) countBadge.textContent = tracks.length;
+    if (triggerContainer) triggerContainer.style.display = 'block';
 
     var countText = document.getElementById('pipeline-track-count-text');
     if (countText) countText.textContent = tracks.length + ' tracks found';
