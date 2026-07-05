@@ -468,6 +468,9 @@ function addOrganiserLog(msg) {
     else if (msg.includes('[Warning]')) div.className += ' log-warn';
     div.textContent = msg;
     consoleEl.appendChild(div);
+    while (consoleEl.childElementCount > 200) {
+        consoleEl.removeChild(consoleEl.firstChild);
+    }
     consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 

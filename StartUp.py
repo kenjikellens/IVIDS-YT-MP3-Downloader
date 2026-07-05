@@ -17,65 +17,93 @@ import gemini2
 import gemini3
 import shazam
 
+try:
+    from mutagen.easyid3 import EasyID3
+    from mutagen.mp3 import MP3
+    MUTAGEN_AVAILABLE = True
+except ImportError:
+    MUTAGEN_AVAILABLE = False
+
 log_clients = []
+log_clients_lock = threading.Lock()
 
 # Global flags and references to manage the single-user active download process
 active_processes = set()
 cancelled = False
 download_lock = threading.Lock()
 
+# Caching globals
+_scan_file_cache = {}
+_cached_yt_dlp_path = None
+
 def add_log(msg):
     global log_clients
     print(msg)
     payload = f"data: {msg}\n\n"
-    for client in list(log_clients):
+    with log_clients_lock:
+        clients_copy = list(log_clients)
+    for client in clients_copy:
         try:
             client.write(payload.encode('utf-8'))
             client.flush()
         except:
-            if client in log_clients:
-                log_clients.remove(client)
+            with log_clients_lock:
+                if client in log_clients:
+                    log_clients.remove(client)
 
 
 
 def scan_folder(source_dir):
+    global _scan_file_cache
     files_to_process = []
-    allowed_extensions = ('.mp3', '.wav', '.m4a', '.flac', '.wma', '.ogg', '.aac', '.ape', '.alac')
+    allowed_extensions = {'.mp3', '.wav', '.m4a', '.flac', '.wma', '.ogg', '.aac', '.ape', '.alac'}
     
     for root, dirs, files in os.walk(source_dir):
         for file in files:
             ext = os.path.splitext(file)[1].lower()
             if ext in allowed_extensions:
                 full_path = os.path.join(root, file)
-                file_id = hashlib.md5(full_path.encode('utf-8')).hexdigest()
+                try:
+                    mtime = os.path.getmtime(full_path)
+                except:
+                    mtime = 0
                 
+                # Check cache
+                cached_entry = _scan_file_cache.get(full_path)
+                if cached_entry and cached_entry.get("mtime") == mtime:
+                    files_to_process.append(cached_entry["data"])
+                    continue
+                
+                file_id = hashlib.md5(full_path.encode('utf-8')).hexdigest()
                 folder_name = os.path.basename(root)
                 tags = {}
                 
-                if ext == '.mp3':
+                if ext == '.mp3' and MUTAGEN_AVAILABLE:
                     try:
-                        from mutagen.easyid3 import EasyID3
-                        try:
-                            audio = EasyID3(full_path)
-                            tags = {
-                                "title": audio.get("title", [""])[0],
-                                "artist": audio.get("artist", [""])[0],
-                                "album": audio.get("album", [""])[0],
-                                "year": audio.get("date", [""])[0],
-                                "track": audio.get("tracknumber", [""])[0]
-                            }
-                        except:
-                            pass
+                        audio = EasyID3(full_path)
+                        tags = {
+                            "title": audio.get("title", [""])[0],
+                            "artist": audio.get("artist", [""])[0],
+                            "album": audio.get("album", [""])[0],
+                            "year": audio.get("date", [""])[0],
+                            "track": audio.get("tracknumber", [""])[0]
+                        }
                     except:
                         pass
-                        
-                files_to_process.append({
+                
+                data = {
                     "id": file_id,
                     "filename": file,
                     "full_path": full_path,
                     "folder_name": folder_name,
                     "tags": tags
-                })
+                }
+                
+                _scan_file_cache[full_path] = {
+                    "mtime": mtime,
+                    "data": data
+                }
+                files_to_process.append(data)
     return files_to_process
 
 YEAR_CATEGORIES = [
@@ -195,13 +223,11 @@ def finalize_file(file_info, ai_data, target_dir, organize_mode="classic_periods
         
         # Write tags if MP3 and not unknown
         ext_lower = os.path.splitext(dest_path)[1].lower()
-        if ext_lower == '.mp3' and not ai_data.get("unknown", False):
+        if ext_lower == '.mp3' and not ai_data.get("unknown", False) and MUTAGEN_AVAILABLE:
             try:
-                from mutagen.easyid3 import EasyID3
                 try:
                     audio = EasyID3(dest_path)
                 except:
-                    from mutagen.mp3 import MP3
                     audio = MP3(dest_path)
                     audio.add_tags()
                     audio = EasyID3(dest_path)
@@ -414,6 +440,10 @@ class DownloadManager:
         
         :return: Path to yt-dlp executable
         """
+        global _cached_yt_dlp_path
+        if _cached_yt_dlp_path and (os.path.exists(_cached_yt_dlp_path) or _cached_yt_dlp_path == "yt-dlp"):
+            return _cached_yt_dlp_path
+
         local_path = os.path.join(base_dir, "yt-dlp.exe")
         if os.path.exists(local_path):
             self.sse_callback("status", {"status": "Setup...", "track": "Updating yt-dlp"})
@@ -431,6 +461,7 @@ class DownloadManager:
                     self.sse_callback("log", f"[Warning] yt-dlp update process returned non-zero code: {proc.stderr.strip()}")
             except Exception as e:
                 self.sse_callback("log", f"[Warning] Could not update local yt-dlp executable: {str(e)}")
+            _cached_yt_dlp_path = local_path
             return local_path
 
         # Check system PATH
@@ -444,6 +475,7 @@ class DownloadManager:
                 subprocess.run(["yt-dlp", "--update"], capture_output=True, startupinfo=startupinfo)
             except:
                 pass
+            _cached_yt_dlp_path = "yt-dlp"
             return "yt-dlp"
 
         # Download from GitHub
@@ -453,6 +485,7 @@ class DownloadManager:
         url = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
         self.download_file_with_progress(url, local_path)
         self.sse_callback("log", "Successfully downloaded yt-dlp.exe.")
+        _cached_yt_dlp_path = local_path
         return local_path
 
     def resolve_ffmpeg(self):
@@ -719,12 +752,25 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
 
     def end_headers(self):
         """
-        Appends anti-caching headers to all HTTP responses to prevent browser file caching.
+        Appends caching headers: no-cache for API calls, public caching for static assets.
         """
-        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-        self.send_header("Pragma", "no-cache")
-        self.send_header("Expires", "0")
+        if self.path.startswith("/api/"):
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
+        else:
+            self.send_header("Cache-Control", "public, max-age=3600")
         super().end_headers()
+
+    def send_json(self, data, status=200):
+        """
+        Sends a JSON formatted response with CORS headers.
+        """
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode('utf-8'))
 
     def do_GET(self):
         """
@@ -793,10 +839,22 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/octet-stream")
         self.send_header("Access-Control-Allow-Origin", "*")
+        try:
+            file_size = os.path.getsize(file_path)
+            self.send_header("Content-Length", str(file_size))
+        except:
+            pass
         self.end_headers()
         
-        with open(file_path, 'rb') as f:
-            self.wfile.write(f.read())
+        try:
+            with open(file_path, 'rb') as f:
+                while True:
+                    chunk = f.read(65536)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+        except:
+            pass
 
     def handle_log_stream(self):
         global log_clients
@@ -807,7 +865,8 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         
-        log_clients.append(self.wfile)
+        with log_clients_lock:
+            log_clients.append(self.wfile)
         try:
             while True:
                 time.sleep(5)
@@ -816,8 +875,9 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
         except:
             pass
         finally:
-            if self.wfile in log_clients:
-                log_clients.remove(self.wfile)
+            with log_clients_lock:
+                if self.wfile in log_clients:
+                    log_clients.remove(self.wfile)
 
     def handle_scan(self, post_data):
         try:
@@ -826,17 +886,9 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             if not source_dir:
                 raise Exception("Missing source_dir parameter")
             files = scan_folder(source_dir)
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(json.dumps({"files": files}).encode('utf-8'))
+            self.send_json({"files": files})
         except Exception as e:
-            self.send_response(400)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+            self.send_json({"error": str(e)}, 400)
 
     def handle_finalize(self, post_data):
         """
@@ -853,17 +905,9 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             delete_source = params.get("delete_source", False)
             
             finalize_file(file_info, ai_data, target_dir, organize_mode=organize_mode, delete_source=delete_source)
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(json.dumps({"status": "Succes", "result": "Verwerkt"}).encode('utf-8'))
+            self.send_json({"status": "Succes", "result": "Verwerkt"})
         except Exception as e:
-            self.send_response(400)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+            self.send_json({"error": str(e)}, 400)
 
     def handle_gemini(self, post_data):
         try:
@@ -884,17 +928,9 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             else:
                 raise Exception(f"Unknown gemini module: {module_name}")
                 
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(json.dumps({"result": result, "error": err}).encode('utf-8'))
+            self.send_json({"result": result, "error": err})
         except Exception as e:
-            self.send_response(400)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+            self.send_json({"error": str(e)}, 400)
 
 
     def handle_get_default_dir(self):
@@ -908,11 +944,7 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
         else:
             downloads_dir = os.path.join(os.path.expanduser("~"), "Downloads")
             
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(json.dumps({"path": downloads_dir}).encode('utf-8'))
+        self.send_json({"path": downloads_dir})
 
     def handle_select_directory(self):
         """
@@ -931,15 +963,10 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             
             path = filedialog.askdirectory(title="Select Download Folder")
             root.destroy()
-        except Exception as e:
-            # tkinter may not be available on headless installations
+        except:
             pass
 
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(json.dumps({"path": path if path else None}).encode('utf-8'))
+        self.send_json({"path": path if path else None})
 
     def handle_cancel_download(self):
         """
@@ -955,11 +982,7 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
                 pass
         active_processes.clear()
                 
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(json.dumps({"status": "cancelled"}).encode('utf-8'))
+        self.send_json({"status": "cancelled"})
 
     def handle_fetch_metadata(self, query_string):
         """
@@ -969,13 +992,8 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
         params = urllib.parse.parse_qs(query_string)
         url = params.get("url", [""])[0]
         
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        
         if not url:
-            self.wfile.write(json.dumps({"error": "Missing URL parameter"}).encode('utf-8'))
+            self.send_json({"error": "Missing URL parameter"})
             return
             
         try:
@@ -985,9 +1003,9 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             manager = DownloadManager(url, "", "audio", "none", "mp3", "192k", 1, -1, None, dummy_callback)
             yt_dlp_path = manager.resolve_yt_dlp()
             tracks = manager.fetch_track_list(yt_dlp_path)
-            self.wfile.write(json.dumps({"tracks": tracks}).encode('utf-8'))
+            self.send_json({"tracks": tracks})
         except Exception as e:
-            self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+            self.send_json({"error": str(e)})
 
     def handle_download_stream(self, query_string):
         """

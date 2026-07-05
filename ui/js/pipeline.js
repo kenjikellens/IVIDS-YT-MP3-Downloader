@@ -9,6 +9,8 @@ var pipelineShouldStop = false;
 var pipelineActiveControllers = [];
 var pipelineLoadedTracks = [];
 var pipelineEventSource = null;
+var pipelineLoadedTracksMap = new Map();
+var pipelineSelectedTrackIds = new Set();
 
 /**
  * Initialises all button and input listeners on the Pipeline page.
@@ -82,12 +84,32 @@ function initPipelinePage() {
     // Playlist toolbar select all / deselect all triggers
     var btnSelectAll = document.getElementById('btn-pipeline-select-all');
     if (btnSelectAll) {
-        btnSelectAll.addEventListener('click', () => togglePipelineSelectAll(true));
+        btnSelectAll.addEventListener('click', function() {
+            pipelineLoadedTracks.forEach(t => pipelineSelectedTrackIds.add(t.id));
+            togglePipelineSelectAll(true);
+        });
     }
 
     var btnDeselectAll = document.getElementById('btn-pipeline-deselect-all');
     if (btnDeselectAll) {
-        btnDeselectAll.addEventListener('click', () => togglePipelineSelectAll(false));
+        btnDeselectAll.addEventListener('click', function() {
+            pipelineSelectedTrackIds.clear();
+            togglePipelineSelectAll(false);
+        });
+    }
+
+    var listEl = document.getElementById('pipeline-track-list');
+    if (listEl) {
+        listEl.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('pipeline-track-cb')) {
+                var trackId = e.target.getAttribute('data-id');
+                if (e.target.checked) {
+                    pipelineSelectedTrackIds.add(trackId);
+                } else {
+                    pipelineSelectedTrackIds.delete(trackId);
+                }
+            }
+        });
     }
 
     // Restore saved paths
@@ -180,6 +202,12 @@ async function loadPipelineMetadata() {
         if (data.error) throw new Error(data.error);
         
         pipelineLoadedTracks = data.tracks || [];
+        pipelineLoadedTracksMap.clear();
+        pipelineSelectedTrackIds.clear();
+        pipelineLoadedTracks.forEach(function(t) {
+            pipelineLoadedTracksMap.set(t.id, t);
+            pipelineSelectedTrackIds.add(t.id);
+        });
         renderPipelinePreview(pipelineLoadedTracks);
     } catch (err) {
         addPipelineLog("[Error] Failed loading metadata: " + err.message);
@@ -225,26 +253,66 @@ function renderPipelinePreview(tracks) {
     var list = document.getElementById('pipeline-track-list');
     if (list) {
         list.innerHTML = '';
-        tracks.forEach(function(t, idx) {
-            var label = document.createElement('label');
-            label.className = 'track-item';
+        list.style.position = 'relative';
+        list.style.overflowY = 'auto';
 
-            var thumbUrl = 'https://img.youtube.com/vi/' + t.id + '/mqdefault.jpg';
-            var durationText = t.duration ? formatDuration(t.duration) : 'Unknown';
+        var spacer = document.createElement('div');
+        spacer.className = 'track-list-spacer';
+        spacer.style.height = (tracks.length * 68) + 'px';
+        list.appendChild(spacer);
 
-            label.innerHTML = 
-                '<input type="checkbox" class="pipeline-track-cb" checked data-id="' + t.id + '">' +
-                '<div class="track-thumb">' +
-                    '<img src="' + thumbUrl + '" alt="" onerror="this.src=\'\'">' +
-                '</div>' +
-                '<div class="track-info">' +
-                    '<div class="track-title">' + (idx + 1) + '. ' + t.title + '</div>' +
-                    '<div class="track-artist">' + t.channel + '</div>' +
-                    '<div class="track-length">Length: ' + durationText + '</div>' +
-                '</div>';
+        var content = document.createElement('div');
+        content.className = 'track-list-content';
+        content.style.position = 'absolute';
+        content.style.top = '0';
+        content.style.left = '0';
+        content.style.right = '0';
+        list.appendChild(content);
 
-            list.appendChild(label);
-        });
+        function updateVisiblePipelineItems() {
+            var scrollTop = list.scrollTop;
+            var containerHeight = list.clientHeight || 400;
+
+            var startIndex = Math.max(0, Math.floor(scrollTop / 68) - 5);
+            var endIndex = Math.min(tracks.length - 1, Math.floor((scrollTop + containerHeight) / 68) + 5);
+
+            content.style.top = (startIndex * 68) + 'px';
+
+            var fragment = document.createDocumentFragment();
+            for (var i = startIndex; i <= endIndex; i++) {
+                var t = tracks[i];
+                var label = document.createElement('label');
+                label.className = 'track-item';
+
+                var thumbUrl = 'https://img.youtube.com/vi/' + t.id + '/mqdefault.jpg';
+                var durationText = t.duration ? formatDuration(t.duration) : 'Unknown';
+                var isChecked = pipelineSelectedTrackIds.has(t.id) ? 'checked' : '';
+
+                label.innerHTML = 
+                    '<input type="checkbox" class="pipeline-track-cb" ' + isChecked + ' data-id="' + t.id + '">' +
+                    '<div class="track-thumb">' +
+                        '<img src="' + thumbUrl + '" alt="" onerror="this.src=\'\'">' +
+                    '</div>' +
+                    '<div class="track-info">' +
+                        '<div class="track-title">' + (i + 1) + '. ' + t.title + '</div>' +
+                        '<div class="track-artist">' + t.channel + '</div>' +
+                        '<div class="track-length">Length: ' + durationText + '</div>' +
+                    '</div>';
+
+                fragment.appendChild(label);
+            }
+            content.innerHTML = '';
+            content.appendChild(fragment);
+        }
+
+        if (list._onScroll) {
+            list.removeEventListener('scroll', list._onScroll);
+        }
+        list._onScroll = updateVisiblePipelineItems;
+        list.addEventListener('scroll', updateVisiblePipelineItems);
+
+        // Initial render
+        updateVisiblePipelineItems();
     }
 }
 
@@ -272,6 +340,9 @@ function addPipelineLog(msg) {
     else if (msg.includes('[Warning]')) div.className += ' log-warn';
     div.textContent = msg;
     consoleEl.appendChild(div);
+    while (consoleEl.childElementCount > 200) {
+        consoleEl.removeChild(consoleEl.firstChild);
+    }
     consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
@@ -447,13 +518,7 @@ async function startPipeline() {
             updateVisualPipeline(1, 'completed');
             updateVisualPipeline(2, 'active');
 
-            var selectedIds = [];
-            document.querySelectorAll('.pipeline-track-cb').forEach(cb => {
-                if (cb.checked) {
-                    var id = cb.getAttribute('data-id');
-                    if (id) selectedIds.push(id);
-                }
-            });
+            var selectedIds = Array.from(pipelineSelectedTrackIds);
 
             if (pipelineLoadedTracks.length > 1 && selectedIds.length === 0) {
                 throw new Error("Geen video's geselecteerd in de preview.");

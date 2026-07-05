@@ -102,10 +102,15 @@ async def recognize_audio(filepath):
         logger.error(f"Gemini Audio Herkenning algemene fout: {e}")
         return None, str(e)
 
+_loop = None
+
 def ask_shazam(filepath):
     """Sync wrapper voor de audio herkenning."""
+    global _loop
     try:
-        return asyncio.run(recognize_audio(filepath))
+        if _loop is None or _loop.is_closed():
+            _loop = asyncio.new_event_loop()
+        return _loop.run_until_complete(recognize_audio(filepath))
     except Exception as e:
         return None, str(e)
 

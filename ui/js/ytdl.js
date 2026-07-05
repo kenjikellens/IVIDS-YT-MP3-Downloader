@@ -5,6 +5,9 @@
  * and cancelling concurrent yt-dlp downloads, and real-time status logging.
  */
 
+var loadedTracksMap = new Map();
+var selectedTrackIds = new Set();
+
 /**
  * Toggles the advanced settings dropdown panel visibility.
  * Toggles 'visible' utility class on the panel container and flips the chevron.
@@ -102,6 +105,7 @@ function initYtdlPage() {
     var btnSelectAll = document.getElementById('btn-select-all');
     if (btnSelectAll) {
         btnSelectAll.addEventListener('click', function() {
+            loadedTracks.forEach(t => selectedTrackIds.add(t.id));
             document.querySelectorAll('#track-list .track-cb').forEach(function(cb) {
                 cb.checked = true;
             });
@@ -111,9 +115,24 @@ function initYtdlPage() {
     var btnDeselectAll = document.getElementById('btn-deselect-all');
     if (btnDeselectAll) {
         btnDeselectAll.addEventListener('click', function() {
+            selectedTrackIds.clear();
             document.querySelectorAll('#track-list .track-cb').forEach(function(cb) {
                 cb.checked = false;
             });
+        });
+    }
+
+    var trackListEl = document.getElementById('track-list');
+    if (trackListEl) {
+        trackListEl.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('track-cb')) {
+                var trackId = e.target.getAttribute('data-id');
+                if (e.target.checked) {
+                    selectedTrackIds.add(trackId);
+                } else {
+                    selectedTrackIds.delete(trackId);
+                }
+            }
         });
     }
 
@@ -171,6 +190,12 @@ async function loadMetadata() {
         }
 
         loadedTracks = tracks;
+        loadedTracksMap.clear();
+        selectedTrackIds.clear();
+        tracks.forEach(function(t) {
+            loadedTracksMap.set(t.id, t);
+            selectedTrackIds.add(t.id);
+        });
         renderPreview(tracks);
     } catch (err) {
         if (typeof addLog === 'function') {
@@ -261,34 +286,73 @@ function renderPreview(tracks) {
 
         var listContainer = document.getElementById('track-list');
         listContainer.innerHTML = '';
+        listContainer.style.position = 'relative';
+        listContainer.style.overflowY = 'auto';
 
-        tracks.forEach(function(track, index) {
-            var row = document.createElement('div');
-            row.className = 'track-item';
-            
-            var thumbUrl = 'https://img.youtube.com/vi/' + track.id + '/mqdefault.jpg';
-            var num = index + 1;
-            var durationText = track.duration ? formatDuration(track.duration) : '';
+        var spacer = document.createElement('div');
+        spacer.className = 'track-list-spacer';
+        spacer.style.height = (tracks.length * 56) + 'px';
+        listContainer.appendChild(spacer);
 
-            row.innerHTML = 
-                '<div class="track-left">' +
-                    '<input type="checkbox" class="track-cb" id="cb-' + track.id + '" data-id="' + track.id + '" checked>' +
-                    '<label class="track-cb-label" for="cb-' + track.id + '"></label>' +
-                    '<span class="track-num">' + num + '</span>' +
-                    '<div class="track-thumb">' +
-                        '<img src="' + thumbUrl + '" alt="Thumbnail" onerror="this.src=\'\'">' +
+        var content = document.createElement('div');
+        content.className = 'track-list-content';
+        content.style.position = 'absolute';
+        content.style.top = '0';
+        content.style.left = '0';
+        content.style.right = '0';
+        listContainer.appendChild(content);
+
+        function updateVisibleItems() {
+            var scrollTop = listContainer.scrollTop;
+            var containerHeight = listContainer.clientHeight || 400;
+
+            var startIndex = Math.max(0, Math.floor(scrollTop / 56) - 5);
+            var endIndex = Math.min(tracks.length - 1, Math.floor((scrollTop + containerHeight) / 56) + 5);
+
+            content.style.top = (startIndex * 56) + 'px';
+
+            var fragment = document.createDocumentFragment();
+            for (var i = startIndex; i <= endIndex; i++) {
+                var track = tracks[i];
+                var row = document.createElement('div');
+                row.className = 'track-item';
+                
+                var thumbUrl = 'https://img.youtube.com/vi/' + track.id + '/mqdefault.jpg';
+                var num = i + 1;
+                var durationText = track.duration ? formatDuration(track.duration) : '';
+                var isChecked = selectedTrackIds.has(track.id) ? 'checked' : '';
+
+                row.innerHTML = 
+                    '<div class="track-left">' +
+                        '<input type="checkbox" class="track-cb" id="cb-' + track.id + '" data-id="' + track.id + '" ' + isChecked + '>' +
+                        '<label class="track-cb-label" for="cb-' + track.id + '"></label>' +
+                        '<span class="track-num">' + num + '</span>' +
+                        '<div class="track-thumb">' +
+                            '<img src="' + thumbUrl + '" alt="Thumbnail" onerror="this.src=\'\'">' +
+                        '</div>' +
+                        '<div class="track-details">' +
+                            '<span class="track-title">' + track.title + '</span>' +
+                            '<span class="track-artist">' + track.channel + '</span>' +
+                        '</div>' +
                     '</div>' +
-                    '<div class="track-details">' +
-                        '<span class="track-title">' + track.title + '</span>' +
-                        '<span class="track-artist">' + track.channel + '</span>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="track-right">' +
-                    '<span class="track-duration">' + durationText + '</span>' +
-                '</div>';
+                    '<div class="track-right">' +
+                        '<span class="track-duration">' + durationText + '</span>' +
+                    '</div>';
 
-            listContainer.appendChild(row);
-        });
+                fragment.appendChild(row);
+            }
+            content.innerHTML = '';
+            content.appendChild(fragment);
+        }
+
+        if (listContainer._onScroll) {
+            listContainer.removeEventListener('scroll', listContainer._onScroll);
+        }
+        listContainer._onScroll = updateVisibleItems;
+        listContainer.addEventListener('scroll', updateVisibleItems);
+
+        // Initial render
+        updateVisibleItems();
     }
 }
 
@@ -334,13 +398,8 @@ async function startDownload() {
 
     // Filter playlist checkmarks
     var selectedIds = [];
-    var checkBoxes = document.querySelectorAll('.track-cb');
-    if (checkBoxes.length > 0) {
-        checkBoxes.forEach(function(cb) {
-            if (cb.checked) {
-                selectedIds.push(cb.getAttribute('data-id'));
-            }
-        });
+    if (loadedTracks.length > 1) {
+        selectedIds = Array.from(selectedTrackIds);
         if (selectedIds.length === 0) {
             alert('Select at least one track to download.');
             return;
@@ -481,13 +540,19 @@ async function cancelDownload() {
  * 
  * @param {number} percent - Completion percent value (0 - 100)
  */
+var _setProgressRAF = null;
 function setProgress(percent) {
-    var fill = document.getElementById('progress-fill');
-    if (fill) {
-        fill.style.width = percent + '%';
-    }
     currentOverallProgressPercent = Math.min(100, Math.max(0, Math.round(percent || 0)));
-    setStatus(currentStatusString);
+    if (!_setProgressRAF) {
+        _setProgressRAF = requestAnimationFrame(function() {
+            var fill = document.getElementById('progress-fill');
+            if (fill) {
+                fill.style.width = currentOverallProgressPercent + '%';
+            }
+            setStatus(currentStatusString);
+            _setProgressRAF = null;
+        });
+    }
 }
 
 /**
@@ -510,7 +575,7 @@ function updateTrackProgress(id, title, percent) {
     }
 
     if (!block) {
-        var trackData = loadedTracks ? loadedTracks.find(t => t.id === id) : null;
+        var trackData = loadedTracksMap.get(id);
         var channel = trackData && trackData.channel ? trackData.channel : 'Unknown Channel';
         var durationText = trackData && trackData.duration ? formatDuration(trackData.duration) : '0:00';
         
@@ -717,6 +782,9 @@ function addLog(msg) {
     var consoleContainer = document.getElementById('console');
     if (consoleContainer) {
         consoleContainer.appendChild(div);
+        while (consoleContainer.childElementCount > 200) {
+            consoleContainer.removeChild(consoleContainer.firstChild);
+        }
         consoleContainer.scrollTop = consoleContainer.scrollHeight;
     }
 }

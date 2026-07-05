@@ -69,12 +69,31 @@ def extract_json(raw_text: str) -> dict:
         
     return json.loads(raw_text)
 
+_client = None
+
+SYSTEM_INSTRUCTION = (
+    "Je bent een expert in muziek-metadata. Gebruik Google Zoeken voor uiterste nauwkeurigheid.\n"
+    "Raadpleeg databases zoals Discogs, MusicBrainz, Wikipedia en songtekst-websites om de exact kloppende gegevens te vinden.\n"
+    "Antwoord ALTIJD en UITSLUITEND met een valide JSON object dat exact deze structuur heeft:\n"
+    '{"titel": "...", "artiesten": "...", "jaar": 1995, "album": "...", "track": 1, "unknown": false}\n'
+    "STRIKTE REGELS:\n"
+    "- Geef GEEN inleiding, GEEN uitleg, GEEN markdown-codeblocks. Begin direct met { en eindig met }.\n"
+    "- Vul 'jaar' in als een 4-cijferig getal (bijv. 1995). Geen datums of tekst.\n"
+    "- Als je niet 100% zeker bent over de match, zet 'unknown' op true, laat tekstvelden leeg ('') en zet getallen op null/None."
+)
+
+def get_client():
+    global _client
+    if _client is None:
+        _client = genai.Client(api_key=API_KEY)
+    return _client
+
 def ask_ai(filename, folder_name, tags):
     """
     Vraagt metadata aan Gemini met API Key 3 (Free Key) via een opeenvolgende fallback-lijst van 5 modellen.
     Dwingt een strikte JSON-structuur af via prompt-instructies en robuuste extractie.
     """
-    client = genai.Client(api_key=API_KEY)
+    client = get_client()
     tags_json = json.dumps(tags)
     
     # Verbeterde prompt specifiek gericht op gerichte zoekopdrachten
@@ -87,18 +106,6 @@ def ask_ai(filename, folder_name, tags):
         "het album/de single-release en het tracknummer op dat album."
     )
     
-    # Verbeterde systeeminstructies voor maximale nauwkeurigheid en structuur
-    system_instr = (
-        "Je bent een expert in muziek-metadata. Gebruik Google Zoeken voor uiterste nauwkeurigheid.\n"
-        "Raadpleeg databases zoals Discogs, MusicBrainz, Wikipedia en songtekst-websites om de exact kloppende gegevens te vinden.\n"
-        "Antwoord ALTIJD en UITSLUITEND met een valide JSON object dat exact deze structuur heeft:\n"
-        '{"titel": "...", "artiesten": "...", "jaar": 1995, "album": "...", "track": 1, "unknown": false}\n'
-        "STRIKTE REGELS:\n"
-        "- Geef GEEN inleiding, GEEN uitleg, GEEN markdown-codeblocks. Begin direct met { en eindig met }.\n"
-        "- Vul 'jaar' in als een 4-cijferig getal (bijv. 1995). Geen datums of tekst.\n"
-        "- Als je niet 100% zeker bent over de match, zet 'unknown' op true, laat tekstvelden leeg ('') en zet getallen op null/None."
-    )
-
     def try_model(model_name):
         """
         Voert een generate_content aanroep uit voor een specifiek model.
@@ -110,7 +117,7 @@ def ask_ai(filename, folder_name, tags):
                 model=model_name,
                 contents=prompt,
                 config=types.GenerateContentConfig(
-                    system_instruction=system_instr,
+                    system_instruction=SYSTEM_INSTRUCTION,
                     tools=[types.Tool(google_search=types.GoogleSearch())],
                     thinking_config=get_thinking_config(model_name)
                 )

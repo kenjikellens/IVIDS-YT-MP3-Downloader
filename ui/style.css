@@ -2510,5 +2510,16 @@ html, body {
     user-select: none;
 }
 
+/* GPU rendering optimizations */
+.progress-fill,
+.pipeline-progress-fill,
+.organiser-progress-fill {
+    will-change: width;
+}
+
+.spinner {
+    will-change: transform;
+}
+
 
 
