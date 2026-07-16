@@ -1986,7 +1986,7 @@ html, body {
     border-radius: 4px;
     box-shadow: var(--shadow-card);
     z-index: 100;
-    max-height: 280px;
+    max-height: 50vh;
     overflow-y: auto;
 }
 
@@ -2227,7 +2227,7 @@ html, body {
     bottom: 100%;
     margin-top: 0;
     margin-bottom: 4px;
-    max-height: 120px;
+    max-height: 50vh;
 }
 
 /* ============================================================ */
@@ -2514,10 +2514,6 @@ html, body {
 .pipeline-progress-fill,
 .organiser-progress-fill {
     will-change: width;
-}
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
 }
 
 /*
