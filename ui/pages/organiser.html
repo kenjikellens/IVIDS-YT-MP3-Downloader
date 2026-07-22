@@ -28,20 +28,20 @@
         </div>
         <!-- Organise Mode (Templates) Dropdown Selection -->
         <div class="form-row vertical-row">
-            <label for="organiser-mode-select">Organisatiemethode</label>
+            <label for="organiser-mode-select" data-i18n="pipeline_org_method_label">Organisatiemethode</label>
             <div class="media-type-select-wrapper">
                 <select id="organiser-mode-select">
-                    <option value="classic_periods" selected>Muziek - Klassieke Periodes (Standaard)</option>
-                    <option value="artist_album">Muziek - Artiest / Album</option>
-                    <option value="channel">Video - Kanaal / YouTuber</option>
-                    <option value="flat">Geen submappen (Platte lijst)</option>
+                    <option value="classic_periods" selected data-i18n="org_method_classic">Muziek - Klassieke Periodes (Standaard)</option>
+                    <option value="artist_album" data-i18n="org_method_artist_album">Muziek - Artiest / Album</option>
+                    <option value="channel" data-i18n="org_method_channel">Video - Kanaal / YouTuber</option>
+                    <option value="flat" data-i18n="org_method_flat">Geen submappen (Platte lijst)</option>
                 </select>
             </div>
         </div>
         <!-- Checkbox to decide whether files are moved (and deleted from source) instead of copied -->
         <div class="form-row checkbox-row">
             <input type="checkbox" id="organiser-delete-source">
-            <label for="organiser-delete-source">Bestanden verplaatsen in plaats van kopiëren (bron opruimen)</label>
+            <label for="organiser-delete-source" data-i18n="organiser_move_files_label">Bestanden verplaatsen in plaats van kopiëren (bron opruimen)</label>
         </div>
         <div class="actions">
             <button class="btn-download" id="btn-organiser-start" data-i18n="organiser_start">Start Processing</button>
