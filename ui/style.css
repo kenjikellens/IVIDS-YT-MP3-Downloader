@@ -577,113 +577,206 @@ html, body {
     align-self: flex-start;
 }
 
-/* General layout container for action triggers (Start, Cancel) */
-.actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 12px;
+/* ===== Standardized Button Component System ===== */
+
+/*
+ * .btn
+ * Base button component class providing standardized font-family, font-weight, padding,
+ * transition animations, focus rings, disabled states, and hover feedback across all buttons.
+ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    border-radius: 4px;
+    border: 1px solid var(--border-default);
+    padding: 8px 16px;
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+    text-decoration: none;
+    white-space: nowrap;
+    transform: scale(1);
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
-/* Primary solid action button representing download triggers */
+/* Keyboard focus-visible state indicator for buttons */
+.btn:focus-visible {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+/* Active press feedback animation for non-disabled buttons */
+.btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+/* Disabled button state formatting */
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/*
+ * .btn-primary / .btn-download
+ * Primary green call-to-action button variant (e.g. Start Download, Start Processing).
+ */
+.btn-primary,
 .btn-download {
     background-color: var(--bg-download);
     color: var(--text-download);
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
-    padding: 10px 22px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transform: scale(1);
-    transition: background-color 0.15s, border-color 0.15s, transform 0.1s ease, box-shadow 0.15s;
+    border-color: var(--border-default);
 }
 
-/* Hover highlights for primary action buttons */
+/* Primary button hover highlight with subtle glow */
+.btn-primary:hover,
 .btn-download:hover {
     background-color: var(--bg-download-hover);
     border-color: var(--accent-green);
     box-shadow: 0 0 8px rgba(34, 197, 94, 0.25);
 }
 
-/* Hover highlights for primary action buttons in light theme */
+/* Primary button hover highlight in light theme */
+.light-theme .btn-primary:hover,
 .light-theme .btn-download:hover {
     box-shadow: 0 0 8px rgba(21, 128, 61, 0.25);
 }
 
-/* Active press highlights for primary action buttons */
-.btn-download:active:not(:disabled) {
-    transform: scale(0.95);
-    filter: brightness(0.85);
+/*
+ * .btn-secondary
+ * Neutral button variant for secondary actions (e.g. Open Downloader, Load Info).
+ */
+.btn-secondary {
+    background-color: var(--bg-button-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-default);
 }
 
-/* Disabled state for primary action buttons */
-.btn-download:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
+/* Secondary button hover highlights */
+.btn-secondary:hover {
+    background-color: var(--bg-button-secondary-hover);
+    border-color: var(--border-hover);
 }
 
-/* Secondary cancel action buttons */
+/*
+ * .btn-danger / .btn-cancel
+ * Red warning/cancel button variant for aborting operations.
+ */
+.btn-danger,
 .btn-cancel {
     background-color: transparent;
     color: var(--accent-red);
-    border: 1px solid var(--accent-red);
-    border-radius: 4px;
-    padding: 10px 18px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transform: scale(1);
-    transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.1s ease, box-shadow 0.15s;
+    border-color: var(--accent-red);
 }
 
-/* Hover highlights for cancel buttons */
+/* Danger button hover highlights */
+.btn-danger:hover,
 .btn-cancel:hover {
     background-color: var(--accent-red-bg);
     border-color: var(--accent-red);
     box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
 }
 
-/* Active press highlights for cancel buttons */
+/* Danger button active press highlights */
+.btn-danger:active:not(:disabled),
 .btn-cancel:active:not(:disabled) {
-    transform: scale(0.95);
     background-color: rgba(239, 68, 68, 0.25);
 }
 
-/* Disabled cancel button styling */
+/* Disabled danger button state formatting */
+.btn-danger:disabled,
 .btn-cancel:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
 
-/* Secondary neutral action buttons */
-.btn-secondary {
-    background-color: var(--bg-button-secondary);
+/*
+ * .btn-outline
+ * Transparent outline button variant for tertiary actions.
+ */
+.btn-outline {
+    background-color: transparent;
     color: var(--text-primary);
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    font-family: inherit;
-    cursor: pointer;
-    transform: scale(1);
-    transition: background-color 0.15s, border-color 0.15s, transform 0.1s ease;
+    border-color: var(--border-default);
 }
 
-/* Hover highlights for secondary neutral buttons */
-.btn-secondary:hover {
+/* Outline button hover highlights */
+.btn-outline:hover {
+    background-color: var(--bg-nav-hover);
+    border-color: var(--border-hover);
+}
+
+/*
+ * .btn-browse
+ * Folder browsing action button alias supporting compact directory pickers.
+ */
+.btn-browse {
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: var(--bg-button-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-default);
+}
+
+/* Browse button hover highlights */
+.btn-browse:hover {
     background-color: var(--bg-button-secondary-hover);
     border-color: var(--border-hover);
 }
 
-/* Active press highlights for secondary neutral buttons */
-.btn-secondary:active {
-    transform: scale(0.95);
-    filter: brightness(0.9);
+/*
+ * .btn-select
+ * Compact selection action button alias (e.g. Select All / Deselect All).
+ */
+.btn-select {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border-default);
+}
+
+/* Select button hover highlights */
+.btn-select:hover {
+    background-color: var(--bg-button-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+}
+
+/*
+ * Button Size Utilities
+ */
+
+/* Small button modifier class */
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 11px;
+}
+
+/* Medium standard button modifier class */
+.btn-md {
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+/* Large prominent button modifier class */
+.btn-lg {
+    padding: 12px 32px;
+    font-size: 1.05rem;
+}
+
+/* Full width container modifier class */
+.btn-full {
+    width: 100%;
 }
 
 /* Disclosure selector trigger button showing advanced configurations */
@@ -2516,125 +2609,7 @@ html, body {
     will-change: width;
 }
 
-/*
- * Style for active progress container when the CLI output is hidden.
- * Ensures the container remains flexible (flex: 0 1 auto) and only grows/fits to hold its child items.
- */
-.hide-cli .active-progress-container {
-    max-height: none;
-    flex: 0 1 auto;
-}
 
-/* If active progress is visible, only active progress stretches and status card stays normal */
-.hide-cli .overall-status-card:has(~ .active-progress-container:not(:empty)) {
-    flex: 0 0 auto;
-    display: block;
-}
-
-
-/* ============================================================ */
-/* MUSIC ORGANISER REDESIGNED STATUS CARD & LOADERS SPECIFIC    */
-/* ============================================================ */
-
-/* Specific grid column positioning for the Music Organiser page columns */
-#page-organiser #organiser-progress-section {
-    grid-column: 2;
-}
-
-#page-organiser #organiser-preview-panel {
-    grid-column: 3;
-}
-
-/*
- * .overall-status-card .active-progress-container
- * Override to layout and embed individual loaders inside the overall status card card borders.
- */
-.overall-status-card .active-progress-container {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border-default);
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-}
-
-/*
- * .api-badge
- * Monochromatic, neutral status badge showing the active API or system action.
- */
-.api-badge {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-    background-color: rgba(255, 255, 255, 0.04);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-default);
-}
-
-/* Light theme support for api-badge */
-.light-theme .api-badge {
-    background-color: rgba(0, 0, 0, 0.04);
-    color: var(--text-secondary);
-}
-
-/*
- * .status-number-container
- * Compact status indicator pill representing batch count ratios (e.g. 2/10).
- */
-.status-number-container {
-    background-color: rgba(99, 102, 241, 0.12);
-    color: var(--status-setup-color);
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-/* Light theme support for status-number-container */
-.light-theme .status-number-container {
-    background-color: rgba(79, 70, 229, 0.08);
-}
-
-/*
- * .track-progress-circle .exclamation-path
- * Vector path displaying a yellow exclamation mark icon for unknown metadata states.
- */
-.track-progress-circle .exclamation-path {
-    fill: none;
-    stroke: #fbbf24;
-    stroke-width: 4;
-    stroke-linecap: round;
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
-}
-
-/* Displays the exclamation mark icon when track is in unknown state */
-.track-progress-block.unknown .track-progress-circle .exclamation-path {
-    opacity: 1;
-}
-
-/* Hides the green loader circle-fill indicator for complete, failed, and unknown states */
-.track-progress-block.complete .track-progress-circle .circle-fill,
-.track-progress-block.failed .track-progress-circle .circle-fill,
-.track-progress-block.unknown .track-progress-circle .circle-fill {
-    opacity: 0;
-}
-
-/* Soft colored status backing circles for complete, failed, and unknown states */
-.track-progress-block.complete .track-progress-circle .circle-bg {
-    stroke: rgba(34, 197, 94, 0.15);
-}
-.track-progress-block.failed .track-progress-circle .circle-bg {
-    stroke: rgba(239, 68, 68, 0.15);
-}
-.track-progress-block.unknown .track-progress-circle .circle-bg {
-    stroke: rgba(245, 158, 11, 0.15);
-}
 
 /* Ensures progress fill ring starts at 12 o'clock while icons stay upright */
 .track-progress-circle .circle-fill {
