@@ -48,6 +48,8 @@
     "settings_downloads_section":  "Downloads",
     "settings_language_section":  "Language",
     "settings_advanced_section":  "Advanced Settings",
+    "settings_org_multidownload_label":  "Organiser Concurrency",
+    "settings_org_multidownload_desc":  "Choose how many tracks are processed simultaneously by the AI in the Organiser.",
     "status_prefix":  "Status: ",
     "status_idle":  "Idle",
     "status_querying":  "Querying URL...",

@@ -133,5 +133,7 @@
     "subfolder_none":  "None (Save directly to folder)",
     "subfolder_year":  "By Upload Year (e.g. 2008/Title)",
     "subfolder_playlist":  "By Playlist (e.g. Playlist Name/Title)",
-    "subfolder_channel":  "By Channel (e.g. Creator/Title)"
+    "subfolder_channel":  "By Channel (e.g. Creator/Title)",
+    "settings_org_multidownload_label":  "Organiser Concurrency",
+    "settings_org_multidownload_desc":  "Choose how many tracks are processed simultaneously by the AI in the Organiser."
 }

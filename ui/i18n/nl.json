@@ -48,6 +48,8 @@
     "settings_downloads_section":  "Downloads",
     "settings_language_section":  "Taal",
     "settings_advanced_section":  "Geavanceerde Instellingen",
+    "settings_org_multidownload_label":  "Organisator Gelijktijdigheid",
+    "settings_org_multidownload_desc":  "Kies hoeveel nummers tegelijk verwerkt worden door de AI in de Organisator.",
     "status_prefix":  "Status: ",
     "status_idle":  "Inactief",
     "status_querying":  "URL opvragen...",

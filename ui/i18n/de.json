@@ -133,5 +133,7 @@
     "subfolder_none":  "Keine (Direkt im Ordner speichern)",
     "subfolder_year":  "Nach Upload-Jahr (z. B. 2008/Titel)",
     "subfolder_playlist":  "Nach Wiedergabeliste (z. B. Name/Titel)",
-    "subfolder_channel":  "Nach Kanal (z. B. Ersteller/Titel)"
+    "subfolder_channel":  "Nach Kanal (z. B. Ersteller/Titel)",
+    "settings_org_multidownload_label":  "Organiser Concurrency",
+    "settings_org_multidownload_desc":  "Choose how many tracks are processed simultaneously by the AI in the Organiser."
 }

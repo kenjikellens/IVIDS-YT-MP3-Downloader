@@ -120,6 +120,39 @@ html, body {
     overflow: hidden;
 }
 
+/*
+ * Smooth 500ms transition applied during dark and light mode theme switching
+ * for all background colors, text colors, border colors, and box shadows.
+ */
+html,
+body,
+.app-container,
+.titlebar,
+.sidebar,
+.card,
+.modal-content,
+.config-panel,
+.preview-panel,
+.output-panel,
+.page-header,
+.settings-card,
+.nav-item,
+.btn,
+.btn-download,
+.btn-secondary,
+.btn-cancel,
+.btn-browse,
+.btn-select,
+.theme-switch,
+.theme-switch-handle,
+.track-card,
+.console,
+input,
+select,
+textarea {
+    transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+}
+
 /* Custom titlebar strip for Electron frameless window layouts */
 .titlebar {
     display: flex;
@@ -2937,4 +2970,207 @@ html, body {
         grid-column: 1;
         grid-row: auto;
     }
+}
+
+/* ===== Settings Page Component & Layout System ===== */
+
+/*
+ * .settings-page-wrapper
+ * Container wrapper for the settings page providing maximum width constraints,
+ * centered auto-margins, and clean responsive padding.
+ */
+.settings-page-wrapper {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 0 16px 40px 16px;
+}
+
+/*
+ * .settings-sections-container
+ * Vertical flex stack holding grouped setting card sections.
+ */
+.settings-sections-container {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    margin-top: 20px;
+}
+
+/*
+ * .settings-section
+ * Individual category section containing section header title and settings card wrapper.
+ */
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/*
+ * .settings-section-title
+ * Category header title with subtle accent green icon indicators and uppercase letter-spacing.
+ */
+.settings-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 4px 4px;
+}
+
+.settings-section-title::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 14px;
+    background-color: var(--accent-green);
+    border-radius: 2px;
+}
+
+/*
+ * .settings-card
+ * Dedicated card container holding settings rows with internal row dividers and hover focus.
+ */
+.card.settings-card {
+    padding: 8px 24px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow, 0 4px 12px rgba(0, 0, 0, 0.15));
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card.settings-card:hover {
+    border-color: var(--border-hover);
+}
+
+/*
+ * .settings-row
+ * Horizontal form row aligning title/description on left and control switch/dropdown on right.
+ */
+.form-row.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border-default);
+    margin: 0;
+}
+
+.form-row.settings-row:last-child {
+    border-bottom: none;
+}
+
+/*
+ * .settings-info
+ * Vertical container holding label title and detailed setting subtext.
+ */
+.settings-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+/*
+ * .settings-label
+ * Setting title text label.
+ */
+.settings-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/*
+ * .settings-desc
+ * Muted explanatory text string explaining setting behavior.
+ */
+.settings-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/*
+ * .settings-lang-select-wrapper & .settings-lang-select
+ * Styled dropdown selector wrapper for settings controls.
+ */
+.settings-lang-select-wrapper {
+    position: relative;
+    min-width: 180px;
+}
+
+.settings-lang-select {
+    width: 100%;
+    background-color: var(--bg-input, rgba(255, 255, 255, 0.05));
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    padding: 8px 32px 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.settings-lang-select:hover {
+    border-color: var(--border-hover);
+}
+
+.settings-lang-select:focus-visible {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.settings-lang-select-wrapper::after {
+    content: "▾";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+/*
+ * Custom Directory Selector Row within Settings
+ */
+.settings-dir-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    margin: 0 0 16px 0;
+    background-color: rgba(0, 0, 0, 0.15);
+    border: 1px dashed var(--border-default);
+    border-radius: 8px;
+}
+
+.light-theme .settings-dir-row {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.settings-dir-row.hidden {
+    display: none;
+}
+
+.settings-dir-path {
+    flex: 1;
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
