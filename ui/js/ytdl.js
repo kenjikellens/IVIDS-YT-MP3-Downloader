@@ -170,7 +170,7 @@ async function loadMetadata() {
     // Switch previews panel states to empty/loading placeholder
     showPreviewState('empty');
     document.getElementById('state-empty').innerHTML = 
-        '<div class="spinner"></div>' +
+        '<img src="svg/loader.svg" class="svg-loader" alt="Loading..." />' +
         '<p>' + getTranslation('preview_loading', 'Loading tracks metadata...') + '</p>';
 
     try {

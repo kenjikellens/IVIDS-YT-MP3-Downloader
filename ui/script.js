@@ -58,7 +58,7 @@ async function navigateTo(routeKey) {
         loadingSpinner.id = 'page-loading-spinner';
         loadingSpinner.style.cssText = 'display: none; height: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 16px;';
         loadingSpinner.innerHTML = `
-            <div class="spinner"></div>
+            <img src="svg/loader.svg" class="svg-loader" alt="Loading..." />
             <p>Loading...</p>
         `;
         container.appendChild(loadingSpinner);
