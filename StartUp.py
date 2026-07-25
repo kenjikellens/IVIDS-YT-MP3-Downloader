@@ -823,9 +823,50 @@ class PythonWebServerHandler(SimpleHTTPRequestHandler):
             self.handle_finalize(post_data)
         elif path == "/api/gemini":
             self.handle_gemini(post_data)
+        elif path == "/api/save-gemini-key":
+            self.handle_save_gemini_key(post_data)
         else:
             self.send_response(404)
             self.end_headers()
+
+    def handle_save_gemini_key(self, post_data):
+        """
+        Handles POST /api/save-gemini-key requests.
+        Updates os.environ["GEMINI_KEY_1"] and writes to .env file.
+        """
+        try:
+            params = json.loads(post_data.decode('utf-8'))
+            api_key = params.get("api_key", "").strip()
+            
+            os.environ["GEMINI_KEY_1"] = api_key
+            if hasattr(gemini, 'API_KEY'):
+                gemini.API_KEY = api_key
+                
+            # Update .env file
+            env_file = os.path.join(resources_dir, ".env")
+            lines = []
+            if os.path.exists(env_file):
+                with open(env_file, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+            
+            key_updated = False
+            new_lines = []
+            for line in lines:
+                if line.startswith("GEMINI_KEY_1="):
+                    new_lines.append(f"GEMINI_KEY_1={api_key}\n")
+                    key_updated = True
+                else:
+                    new_lines.append(line)
+                    
+            if not key_updated:
+                new_lines.append(f"GEMINI_KEY_1={api_key}\n")
+                
+            with open(env_file, "w", encoding="utf-8") as f:
+                f.writelines(new_lines)
+                
+            self.send_json({"status": "success", "message": "API key updated successfully"})
+        except Exception as e:
+            self.send_json({"error": str(e)}, 400)
 
     def handle_get_file(self, query_string):
         params = urllib.parse.parse_qs(query_string)
@@ -1098,7 +1139,7 @@ def main():
     port = find_free_port(8080)
     server_address = ("localhost", port)
 
-    print(f"Starting IVIDS YT MP3 Downloader Server on http://localhost:{port} ...")
+    print(f"Starting IVIDS Fetch Server on http://localhost:{port} ...")
     
     # Run the server in a separate thread so browser can open in parallel
     server = ThreadingHTTPServer(server_address, PythonWebServerHandler)

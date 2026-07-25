@@ -167,7 +167,44 @@
                         </select>
                     </div>
                 </div>
+                <div class="form-row settings-row">
+                    <div class="settings-info">
+                        <label class="settings-label" data-i18n="settings_gemini_api_label">Gemini API Key</label>
+                        <span class="settings-desc" data-i18n="settings_gemini_api_desc">Configure your Gemini AI API key for intelligent track tagging & metadata organization.</span>
+                    </div>
+                    <button class="btn-primary btn-set-api" id="btn-open-gemini-modal" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px;">
+                        <img src="svg/lock.svg" class="btn-lock-icon" alt="" width="16" height="16">
+                        <span data-i18n="btn_set_api">SET API</span>
+                    </button>
+                </div>
             </div>
         </section>
     </div>
 </div>
+
+<!-- Gemini API Key Modal Popup -->
+<div id="gemini-api-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-content card" style="max-width: 480px;">
+        <div class="modal-header">
+            <h3 class="modal-title" data-i18n="gemini_modal_title">Set Gemini API Key</h3>
+            <button class="btn-close-modal" id="btn-close-gemini-modal" aria-label="Close Modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0 0 12px 0;" data-i18n="gemini_modal_desc">
+                Enter your Gemini API key below to enable AI tagging and song identification.
+            </p>
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                <label for="gemini-api-key-input" style="font-size: 0.85rem; color: var(--text-secondary);" data-i18n="gemini_api_input_label">API Key</label>
+                <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="gemini-api-key-input" class="text-input" placeholder="AIzaSy..." style="width: 100%; padding-right: 40px; box-sizing: border-box;">
+                    <button type="button" id="btn-toggle-key-visibility" style="position: absolute; right: 8px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; font-size: 1.1rem;" title="Toggle Visibility">👁️</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn-secondary" id="btn-cancel-gemini-key" data-i18n="btn_back" style="padding: 8px 18px;">BACK</button>
+            <button class="btn-primary" id="btn-confirm-gemini-key" data-i18n="btn_confirm" style="padding: 8px 18px;">CONFIRM</button>
+        </div>
+    </div>
+</div>
+

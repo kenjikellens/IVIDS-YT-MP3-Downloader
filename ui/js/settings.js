@@ -333,4 +333,79 @@ async function handleDirModeChange() {
     }
 
     await initOutputDirectory();
+
+    // 9. Gemini API Key Modal Handler
+    initGeminiApiModal();
 }
+
+/**
+ * Initializes listeners and state for the Gemini API Key modal popup.
+ */
+function initGeminiApiModal() {
+    var btnOpen = document.getElementById('btn-open-gemini-modal');
+    var btnClose = document.getElementById('btn-close-gemini-modal');
+    var btnCancel = document.getElementById('btn-cancel-gemini-key');
+    var btnConfirm = document.getElementById('btn-confirm-gemini-key');
+    var modal = document.getElementById('gemini-api-modal');
+    var keyInput = document.getElementById('gemini-api-key-input');
+    var btnToggleVis = document.getElementById('btn-toggle-key-visibility');
+
+    if (!modal) return;
+
+    function openModal() {
+        var existingKey = '';
+        try {
+            existingKey = localStorage.getItem('gemini-api-key') || '';
+        } catch (e) {}
+        if (keyInput) keyInput.value = existingKey;
+        modal.style.display = 'flex';
+        setTimeout(function() { modal.classList.add('visible'); }, 10);
+    }
+
+    function closeModal() {
+        modal.classList.remove('visible');
+        setTimeout(function() { modal.style.display = 'none'; }, 200);
+    }
+
+    if (btnOpen) btnOpen.addEventListener('click', openModal);
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
+    });
+
+    if (btnToggleVis && keyInput) {
+        btnToggleVis.addEventListener('click', function() {
+            if (keyInput.type === 'password') {
+                keyInput.type = 'text';
+                btnToggleVis.textContent = '🙈';
+            } else {
+                keyInput.type = 'password';
+                btnToggleVis.textContent = '👁️';
+            }
+        });
+    }
+
+    if (btnConfirm) {
+        btnConfirm.addEventListener('click', async function() {
+            var newKey = keyInput ? keyInput.value.trim() : '';
+            try {
+                localStorage.setItem('gemini-api-key', newKey);
+            } catch (e) {}
+
+            try {
+                await fetch('/api/save-gemini-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: newKey })
+                });
+            } catch (e) {
+                console.warn('Backend API key save failed:', e);
+            }
+
+            closeModal();
+        });
+    }
+}
+

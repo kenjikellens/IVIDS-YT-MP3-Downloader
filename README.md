@@ -1,12 +1,12 @@
-# IVIDS YouTube MP3 Playlist Downloader v0.0.1
+# IVIDS Fetch v0.0.1
 
-Welcome to the first official release of the IVIDS YouTube MP3 Playlist Downloader! 
-A premium, modern, and beautiful YouTube audio downloader application. Featuring a high-performance backend and a unified glassmorphism UI designed for visual excellence. This application allows you to easily download your favorite YouTube playlists and individual tracks as MP3s with a sleek and dynamic user experience, and utilizes advanced AI models to automatically identify and tag the downloaded files.
+Welcome to the official release of IVIDS Fetch! 
+A premium, modern, and beautiful YouTube audio & media downloader application. Featuring a high-performance backend and a unified glassmorphism UI designed for visual excellence. This application allows you to easily download your favorite YouTube playlists and individual tracks as MP3s with a sleek and dynamic user experience, and utilizes advanced AI models to automatically identify and tag the downloaded files.
 
 This project supports **three parallel pathways** for accessing the downloader:
 1. 🐍 **Python Server (`StartUp.py`)**: Runs a lightweight HTTP server serving local files and exposing REST API/SSE streaming for downloads. Accessible from any local/mobile browser (`http://localhost:8080`).
-2. 💻 **PC Desktop Standalone App (`IVIDS YT MP3 Downloader.exe`)**: A compiled desktop application powered by Electron.
-3. 📱 **Mobile App (`IVIDS.apk`)**: A lightweight WebView Android app wrapping the shared web UI assets.
+2. 💻 **PC Desktop Standalone App (`IVIDS Fetch.exe`)**: A compiled desktop application powered by Electron.
+3. 📱 **Mobile App (`IVIDS Fetch.apk`)**: A lightweight WebView Android app wrapping the shared web UI assets.
 
 ---
 
