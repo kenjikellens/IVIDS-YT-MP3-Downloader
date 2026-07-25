@@ -118,8 +118,25 @@ function initializeCustomSelects() {
 
         select.style.display = 'none';
 
+        var isNumeric = false;
+        var options = select.querySelectorAll('option');
+        if (options.length > 0) {
+            var numericCount = 0;
+            options.forEach(function(opt) {
+                var val = (opt.value || '').trim();
+                var txt = (opt.textContent || '').trim();
+                if (/^\d/.test(val) || /^\d/.test(txt)) {
+                    numericCount++;
+                }
+            });
+            if (numericCount / options.length >= 0.5) {
+                isNumeric = true;
+            }
+        }
+
+        var typeClass = isNumeric ? 'custom-select-numeric' : 'custom-select-text';
         var customSelect = document.createElement('div');
-        customSelect.className = 'custom-select';
+        customSelect.className = 'custom-select ' + typeClass;
         if (select.id) {
             customSelect.classList.add(select.id + '-custom');
         }

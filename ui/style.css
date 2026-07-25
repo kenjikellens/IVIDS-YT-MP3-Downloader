@@ -7,7 +7,7 @@
     --bg-sidebar: #121215;         /* Slightly lighter gray sidebar background */
     
     /* Borders */
-    --border-default: #27272a;     /* Defined border (slate-800) */
+    --border-default: transparent;     /* Transparent border for borderless container design */
     --border-hover: #60a5fa;       /* Hover border (light blue) */
     --border-focus: #ffffff;       /* Pure white focus highlight */
     
@@ -77,7 +77,7 @@
     --bg-sidebar: #f4f4f5;         /* Light sidebar matching background */
     
     /* Borders */
-    --border-default: #d4d4d8;     /* Visible light border (zinc-300) */
+    --border-default: transparent;     /* Transparent border for borderless container design */
     --border-hover: #2563eb;       /* Hover border (blue) */
     --border-focus: #09090b;       /* Black focus highlight */
     
@@ -423,10 +423,10 @@ html, body {
     flex: 1;
 }
 
-/* Base card border element styling */
+/* Base card container styling without borders */
 .card {
     background-color: var(--bg-card);
-    border: 1px solid var(--border-default);
+    border: none;
     border-radius: 6px;
     padding: 16px;
     box-shadow: var(--shadow-card);
@@ -487,8 +487,8 @@ input[type="text"],
 input[type="password"] {
     flex: 1;
     background-color: var(--bg-input);
-    border: 1px solid var(--border-default);
-    border-radius: 6px;
+    border: none;
+    border-radius: 8px;
     padding: 10px 14px;
     color: var(--text-primary);
     font-size: 14px;
@@ -552,8 +552,8 @@ input[type="password"]::placeholder {
     font-size: 12px;
     color: var(--text-secondary);
     background-color: var(--bg-input);
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
+    border: none;
+    border-radius: 8px;
     padding: 8px 12px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -565,8 +565,8 @@ input[type="password"]::placeholder {
 .btn-browse {
     background-color: var(--bg-button-secondary);
     color: var(--text-primary);
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
+    border: none;
+    border-radius: 8px;
     padding: 8px 14px;
     font-size: 12px;
     font-weight: 500;
@@ -650,8 +650,8 @@ input[type="password"]::placeholder {
     font-size: 13px;
     font-weight: 600;
     line-height: 1.4;
-    border-radius: 4px;
-    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    border: none;
     padding: 10px 22px;
     cursor: pointer;
     user-select: none;
@@ -957,8 +957,8 @@ input[type="password"]::placeholder {
     gap: 16px;
     padding: 14px;
     background-color: var(--bg-input);
-    border: 1px solid var(--border-default);
-    border-radius: 6px;
+    border: none;
+    border-radius: 8px;
 }
 
 /* Thumbnail element wrappers containing duration overlays */
@@ -1104,8 +1104,8 @@ input[type="password"]::placeholder {
     gap: 12px;
     padding: 10px;
     background-color: var(--bg-input);
-    border: 1px solid var(--border-default);
-    border-radius: 6px;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
     transform: scale(1);
     transition: background-color 0.15s, border-color 0.15s, transform 0.15s ease;
@@ -1498,8 +1498,8 @@ input[type="password"]::placeholder {
 .console {
     flex: 1;
     background-color: var(--bg-console);
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
+    border: none;
+    border-radius: 8px;
     padding: 10px;
     overflow-y: auto;
     font-family: var(--font-mono);
@@ -1540,8 +1540,8 @@ input[type="password"]::placeholder {
     align-items: center;
     justify-content: center;
     padding: 48px;
-    border: 1px dashed var(--border-default);
-    border-radius: 6px;
+    border: none;
+    border-radius: 8px;
     margin-top: 12px;
 }
 
@@ -1562,8 +1562,8 @@ input[type="password"]::placeholder {
     gap: 12px;
     padding: 12px 14px;
     background-color: var(--bg-card);
-    border: 1px solid var(--border-default);
-    border-radius: 6px;
+    border: none;
+    border-radius: 8px;
 }
 
 /* Download entry file format icons backgrounds */
@@ -1960,8 +1960,8 @@ input[type="password"]::placeholder {
     font-size: 12px;
     color: var(--text-secondary);
     background-color: var(--bg-input);
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
+    border: none;
+    border-radius: 8px;
     padding: 8px 12px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1982,8 +1982,8 @@ input[type="password"]::placeholder {
 /* Dropdown select element for choosing UI language preference */
 .settings-lang-select {
     background-color: var(--bg-input);
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
+    border: none;
+    border-radius: 8px;
     padding: 8px 12px;
     color: var(--text-primary);
     font-size: 13px;
@@ -2046,8 +2046,10 @@ input[type="password"]::placeholder {
     align-items: center;
 }
 
-/* Container for the custom select component that replaces native dropdowns */
-.custom-select {
+/* Container for the custom select components that replace native dropdowns */
+.custom-select,
+.custom-select-text,
+.custom-select-numeric {
     position: relative;
     width: 100%;
     user-select: none;
@@ -2060,8 +2062,8 @@ input[type="password"]::placeholder {
     justify-content: space-between;
     width: 100%;
     background-color: var(--bg-input);
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
+    border: none;
+    border-radius: 8px;
     padding: 8px 12px;
     color: var(--text-primary);
     font-size: 13px;
@@ -2109,8 +2111,8 @@ input[type="password"]::placeholder {
     right: 0;
     margin-top: 4px;
     background-color: var(--bg-card);
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
+    border: none;
+    border-radius: 8px;
     box-shadow: var(--shadow-card);
     z-index: 100;
     max-height: 50vh;
@@ -2911,7 +2913,7 @@ input[type="password"]::placeholder {
 /* Modal Content Container */
 .modal-backdrop .modal-content {
     background-color: var(--bg-card);
-    border: 1px solid var(--border-default);
+    border: none;
     border-radius: 8px;
     width: 90%;
     max-width: 600px;
@@ -2933,7 +2935,7 @@ input[type="password"]::placeholder {
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
-    border-bottom: 1px solid var(--border-default);
+    border-bottom: none;
 }
 
 .modal-backdrop .modal-title {
@@ -2972,7 +2974,7 @@ input[type="password"]::placeholder {
     display: flex;
     justify-content: flex-end;
     padding: 16px 20px;
-    border-top: 1px solid var(--border-default);
+    border-top: none;
     background-color: rgba(9, 9, 11, 0.1);
 }
 
