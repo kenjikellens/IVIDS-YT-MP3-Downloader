@@ -1920,21 +1920,28 @@ input[type="password"]::placeholder {
 }
 
 /* Distinct visual design for the CLI toggle switch (off state) */
-#cli-switch:not(.active) {
+#cli-switch {
     background-color: var(--bg-button-secondary);
-    border-color: var(--border-default);
+    border: none;
+    transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.1s ease;
 }
-#cli-switch:not(.active) .theme-switch-handle {
-    background-color: var(--text-secondary);
+
+#cli-switch .theme-switch-handle {
+    background-color: var(--text-muted);
+    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s ease;
 }
 
 /* Distinct visual design for the CLI toggle switch (on/active state) */
-#cli-switch.active {
+#cli-switch.active,
+#cli-switch.dark {
     background-color: var(--accent-green);
     border-color: var(--accent-green);
 }
-#cli-switch.active .theme-switch-handle {
+
+#cli-switch.active .theme-switch-handle,
+#cli-switch.dark .theme-switch-handle {
     background-color: #ffffff;
+    left: 28px;
 }
 
 /* Hide console when class is present */
@@ -2173,6 +2180,21 @@ input[type="password"]::placeholder {
 .light-theme .custom-select-option.selected {
     background-color: rgba(0, 0, 0, 0.08);
     color: #09090b;
+}
+
+/* Styling specifically for text-based dropdown options (.custom-select-text) */
+.custom-select-text .custom-select-options {
+    padding: 4px;
+}
+
+.custom-select-text .custom-select-option {
+    margin: 2px 0;
+    border-radius: 6px;
+}
+
+.custom-select-text .custom-select-option:hover,
+.custom-select-text .custom-select-option.selected {
+    border-radius: 6px;
 }
 
 /* 

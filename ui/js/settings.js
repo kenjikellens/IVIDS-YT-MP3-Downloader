@@ -44,11 +44,11 @@ async function initSettingsPage() {
         
         if (cliLogsVisible === 'true') {
             document.body.classList.remove('hide-cli');
-            cliSwitch.classList.add('dark');
+            cliSwitch.classList.add('active', 'dark');
             cliSwitch.setAttribute('aria-checked', 'true');
         } else {
             document.body.classList.add('hide-cli');
-            cliSwitch.classList.remove('dark');
+            cliSwitch.classList.remove('active', 'dark');
             cliSwitch.setAttribute('aria-checked', 'false');
         }
 
@@ -207,10 +207,10 @@ function toggleCli() {
     
     if (cliSwitch) {
         if (isVisible) {
-            cliSwitch.classList.add('dark');
+            cliSwitch.classList.add('active', 'dark');
             cliSwitch.setAttribute('aria-checked', 'true');
         } else {
-            cliSwitch.classList.remove('dark');
+            cliSwitch.classList.remove('active', 'dark');
             cliSwitch.setAttribute('aria-checked', 'false');
         }
     }
