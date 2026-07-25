@@ -272,9 +272,11 @@ html, body {
     flex-shrink: 0;
     background-color: var(--bg-sidebar);
     border-right: none;
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
     display: flex;
     flex-direction: column;
-    padding: 16px 0;
+    padding: 16px 6px;
     gap: 4px;
     overflow-y: auto;
 }
@@ -286,7 +288,7 @@ html, body {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--text-muted);
-    padding: 12px 20px 6px;
+    padding: 12px 14px 6px;
 }
 
 /* Navigation sidebar clickable routing items */
@@ -294,13 +296,14 @@ html, body {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 20px;
+    padding: 10px 14px;
+    margin: 0 2px;
     font-size: 13px;
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
-    border-left: 3px solid transparent;
-    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+    border-radius: 8px;
+    transition: background-color 0.15s, color 0.15s;
 }
 
 /* Hover styling for unselected sidebar navigation options */
@@ -314,11 +317,10 @@ html, body {
     background-color: var(--bg-nav-active);
 }
 
-/* Active navigation selection with solid border highlights */
+/* Active navigation selection block highlights */
 .nav-item.active {
     background-color: var(--bg-nav-active);
     color: var(--text-primary);
-    border-left-color: var(--text-primary);
     font-weight: 600;
 }
 
