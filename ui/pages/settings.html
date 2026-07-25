@@ -197,7 +197,9 @@
                 <label for="gemini-api-key-input" style="font-size: 0.85rem; color: var(--text-secondary);" data-i18n="gemini_api_input_label">API Key</label>
                 <div style="position: relative; display: flex; align-items: center;">
                     <input type="password" id="gemini-api-key-input" class="text-input" placeholder="AIzaSy..." style="width: 100%; padding-right: 40px; box-sizing: border-box;">
-                    <button type="button" id="btn-toggle-key-visibility" style="position: absolute; right: 8px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; font-size: 1.1rem;" title="Toggle Visibility">👁️</button>
+                    <button type="button" id="btn-toggle-key-visibility" style="position: absolute; right: 8px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center;" title="Toggle Visibility">
+                        <img id="img-toggle-key-icon" src="svg/eye.svg" alt="Toggle Visibility" width="16" height="16">
+                    </button>
                 </div>
             </div>
         </div>

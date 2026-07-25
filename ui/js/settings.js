@@ -192,6 +192,9 @@ async function initSettingsPage() {
     
     // Initialiseer directory pad label
     await initOutputDirectory();
+
+    // 9. Gemini API Key Modal Handler
+    initGeminiApiModal();
 }
 
 /**
@@ -333,9 +336,6 @@ async function handleDirModeChange() {
     }
 
     await initOutputDirectory();
-
-    // 9. Gemini API Key Modal Handler
-    initGeminiApiModal();
 }
 
 /**
@@ -376,13 +376,14 @@ function initGeminiApiModal() {
     });
 
     if (btnToggleVis && keyInput) {
+        var iconImg = document.getElementById('img-toggle-key-icon');
         btnToggleVis.addEventListener('click', function() {
             if (keyInput.type === 'password') {
                 keyInput.type = 'text';
-                btnToggleVis.textContent = '🙈';
+                if (iconImg) iconImg.src = 'svg/eye-off.svg';
             } else {
                 keyInput.type = 'password';
-                btnToggleVis.textContent = '👁️';
+                if (iconImg) iconImg.src = 'svg/eye.svg';
             }
         });
     }

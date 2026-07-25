@@ -29,37 +29,6 @@
 </head>
 <body>
 
-    <!-- Custom titlebar for frameless windows -->
-    <div class="titlebar" id="app-titlebar">
-        <div class="titlebar-drag-region"></div>
-        <div class="titlebar-left">
-            <button class="hamburger" id="hamburger-btn" aria-label="Toggle Navigation Sidebar">☰</button>
-            <div class="titlebar-logo">
-                <svg class="titlebar-icon" viewBox="0 0 24 24" width="14" height="14">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
-                </svg>
-                <span class="titlebar-text" data-i18n="titlebar">IVIDS Fetch</span>
-            </div>
-        </div>
-        <div class="titlebar-controls">
-            <button class="titlebar-btn btn-minimize" id="btn-minimize" aria-label="Minimize Window">
-                <svg viewBox="0 0 10 10" width="10" height="10">
-                    <rect y="4.5" width="10" height="1" fill="currentColor"/>
-                </svg>
-            </button>
-            <button class="titlebar-btn btn-maximize" id="btn-maximize" aria-label="Maximize Window">
-                <svg viewBox="0 0 10 10" width="10" height="10">
-                    <rect x="1.5" y="1.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.2"/>
-                </svg>
-            </button>
-            <button class="titlebar-btn btn-close" id="btn-close" aria-label="Close Window">
-                <svg viewBox="0 0 10 10" width="10" height="10">
-                    <polygon points="10,1 9,0 5,4 1,0 0,1 4,5 0,9 1,10 5,6 9,10 10,9 6,5" fill="currentColor"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-
     <!-- Sidebar overlay backdrop for mobile collapse/slide layouts -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
@@ -68,7 +37,6 @@
 
         <!-- Sidebar Navigation Menu -->
         <nav class="sidebar" id="sidebar">
-            <div class="sidebar-label" data-i18n="nav_navigation">Navigation</div>
             <div class="nav-item active" id="nav-home">
                 <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                 <span data-i18n="nav_home">Home</span>

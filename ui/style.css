@@ -4,7 +4,7 @@
     --bg-app: #09090b;             /* Deep slate-950 background */
     --bg-card: #18181b;            /* Sleek slate-900 card background */
     --bg-input: #27272a;           /* Input field background (slate-800) */
-    --bg-sidebar: #09090b;         /* Sidebar matching app background */
+    --bg-sidebar: #121215;         /* Slightly lighter gray sidebar background */
     
     /* Borders */
     --border-default: #27272a;     /* Defined border (slate-800) */
@@ -152,18 +152,7 @@ html, body {
 
 /* Custom titlebar strip for Electron frameless window layouts */
 .titlebar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: var(--titlebar-height);
-    background-color: var(--bg-card);
-    border-bottom: 1px solid var(--border-default);
-    user-select: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
+    display: none;
 }
 
 /* Drag region covering titlebar allowing window relocation in Electron */
@@ -273,8 +262,8 @@ html, body {
 /* Main app wrapper containing the navigation sidebar and the main content viewport */
 .app-shell {
     display: flex;
-    height: calc(100% - var(--titlebar-height));
-    margin-top: var(--titlebar-height);
+    height: 100%;
+    margin-top: 0;
 }
 
 /* Navigation sidebar holding page routing anchors */
@@ -282,7 +271,7 @@ html, body {
     width: var(--sidebar-width);
     flex-shrink: 0;
     background-color: var(--bg-sidebar);
-    border-right: 1px solid var(--border-default);
+    border-right: none;
     display: flex;
     flex-direction: column;
     padding: 16px 0;
@@ -488,33 +477,62 @@ html, body {
     color: var(--text-secondary);
 }
 
-/* Text inputs containing YouTube URLs */
-.form-row input[type="text"] {
+/* Text and password input fields styling */
+.text-input,
+.form-row input[type="text"],
+.form-row input[type="password"],
+input[type="text"],
+input[type="password"] {
     flex: 1;
     background-color: var(--bg-input);
     border: 1px solid var(--border-default);
-    border-radius: 4px;
-    padding: 8px 12px;
+    border-radius: 6px;
+    padding: 10px 14px;
     color: var(--text-primary);
-    font-size: 13px;
+    font-size: 14px;
     font-family: inherit;
     outline: none;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-/* Hover highlights for text input fields */
-.form-row input[type="text"]:hover {
+/* Hover highlights for input fields */
+.text-input:hover,
+.form-row input[type="text"]:hover,
+.form-row input[type="password"]:hover,
+input[type="text"]:hover,
+input[type="password"]:hover {
     border-color: var(--border-hover);
 }
 
-/* Active focus highlight state for text input fields */
-.form-row input[type="text"]:focus {
-    border-color: var(--border-focus);
+/* Active focus highlight state for input fields */
+.text-input:focus,
+.form-row input[type="text"]:focus,
+.form-row input[type="password"]:focus,
+input[type="text"]:focus,
+input[type="password"]:focus {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
 }
 
 /* Placeholder styling inside input elements */
-.form-row input[type="text"]::placeholder {
+.text-input::placeholder,
+.form-row input[type="text"]::placeholder,
+.form-row input[type="password"]::placeholder,
+input[type="text"]::placeholder,
+input[type="password"]::placeholder {
     color: var(--text-muted);
+}
+
+/* Password visibility toggle icon color mapping */
+#img-toggle-key-icon {
+    filter: invert(0.8) brightness(1.2);
+    transition: opacity 0.15s, filter 0.15s;
+    opacity: 0.75;
+}
+
+#btn-toggle-key-visibility:hover #img-toggle-key-icon {
+    filter: invert(1) brightness(2);
+    opacity: 1;
 }
 
 /* Directory selection wrapper containing paths and browse triggers */
