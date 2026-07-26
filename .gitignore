@@ -1,9 +1,13 @@
 # Dependencies and node artifacts
 node_modules/
 
-# Production builds
+# Production & Build folders
 dist/
 build/
+app/build/
+.gradle/
+.idea/
+*.spec
 
 # Local configuration
 .vscode/
