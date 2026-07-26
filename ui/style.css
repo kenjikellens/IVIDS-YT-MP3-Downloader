@@ -2759,7 +2759,7 @@ input[type="password"]::placeholder {
 
 /* Pipeline action buttons positioning */
 .pipeline-config-column .actions {
-    margin-left: 30px;
+    margin-left: 0;
     margin-top: 10px;
 }
 
@@ -2850,38 +2850,11 @@ input[type="password"]::placeholder {
     flex-direction: column;
     gap: 0px;
     position: relative;
-    padding-left: 20px;
-}
-.timeline-container::before {
-    content: '';
-    position: absolute;
-    top: 15px;
-    bottom: 15px;
-    left: 4px;
-    width: 2px;
-    background: linear-gradient(to bottom, var(--border-default) 80%, rgba(0,0,0,0) 100%);
-    z-index: 1;
+    padding-left: 0;
 }
 .timeline-item {
     position: relative;
     margin-bottom: 24px;
-}
-.timeline-badge {
-    position: absolute;
-    left: -24px;
-    top: 12px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: var(--bg-card);
-    border: 2px solid var(--border-default);
-    z-index: 2;
-    transition: all 0.3s ease;
-}
-.timeline-item.active .timeline-badge {
-    background-color: var(--accent-green);
-    border-color: var(--accent-green);
-    box-shadow: 0 0 8px var(--accent-green);
 }
 .timeline-item-title {
     font-size: 1.15rem;
@@ -3198,3 +3171,23 @@ input[type="password"]::placeholder {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Page transition full-screen splash loader overlay with solid grey background */
+.page-loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background-color: var(--bg-app);
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 99999;
+}
+

@@ -29,6 +29,12 @@
 </head>
 <body>
 
+    <!-- Full screen splash screen loader overlay -->
+    <div id="page-loading-spinner" class="page-loader-overlay">
+        <img src="svg/loader.svg" class="svg-loader" alt="Loading..." />
+        <p data-i18n="loading_text">Loading...</p>
+    </div>
+
     <!-- Sidebar overlay backdrop for mobile collapse/slide layouts -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
@@ -68,11 +74,6 @@
 
         <!-- Main Content Area where templates are loaded dynamically -->
         <main class="main-content" id="main-content">
-            <!-- Loading indicator before dynamic pages load -->
-            <div style="display: flex; height: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 16px;">
-                <img src="svg/loader.svg" class="svg-loader" alt="Loading..." />
-                <p>Loading application interface...</p>
-            </div>
         </main>
     </div>
 

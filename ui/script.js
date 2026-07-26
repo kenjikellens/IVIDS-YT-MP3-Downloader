@@ -37,6 +37,7 @@ const routes = {
 
 /**
  * Loads the HTML template fragment dynamically and runs its page initialization.
+ * Displays a full-screen grey loader for min 200ms and max 1000ms on every page load.
  * 
  * @param {string} routeKey - Route destination name ('home' | 'pipeline' | 'ytdl' | 'organiser' | 'settings')
  */
@@ -47,76 +48,102 @@ async function navigateTo(routeKey) {
     var container = document.getElementById('main-content');
     if (!container) return;
 
+    var startTime = Date.now();
+
     // Initialize shared loading spinner if not exists
     var loadingSpinner = document.getElementById('page-loading-spinner');
     if (!loadingSpinner) {
-        // Clear initial content (like the hardcoded spinner)
         if (!container.querySelector('.page-container')) {
             container.innerHTML = '';
         }
         loadingSpinner = document.createElement('div');
         loadingSpinner.id = 'page-loading-spinner';
-        loadingSpinner.style.cssText = 'display: none; height: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 16px;';
+        loadingSpinner.className = 'page-loader-overlay';
         loadingSpinner.innerHTML = `
             <img src="svg/loader.svg" class="svg-loader" alt="Loading..." />
-            <p>Loading...</p>
+            <p data-i18n="loading_text">Loading...</p>
         `;
-        container.appendChild(loadingSpinner);
+        document.body.appendChild(loadingSpinner);
     }
 
-    // Hide all existing page containers
+    // Hide all existing page containers so only grey loader is visible
     var allPages = container.querySelectorAll('.page-container');
     allPages.forEach(function(page) {
         page.style.display = 'none';
     });
 
+    // Show loading spinner overlay
+    loadingSpinner.style.display = 'flex';
+
     var routeContainerId = 'route-container-' + routeKey;
     var targetContainer = document.getElementById(routeContainerId);
 
-    if (targetContainer) {
-        // Page already loaded, just show it
-        targetContainer.style.display = 'flex';
-        updateSidebarActiveState(routeKey);
-        closeSidebar();
-        return;
-    }
+    // Max 1000ms fallback timer to hide spinner if fetch/init stalls
+    var hasFinished = false;
+    var maxTimer = setTimeout(function() {
+        if (!hasFinished) {
+            hasFinished = true;
+            loadingSpinner.style.display = 'none';
+            if (targetContainer) targetContainer.style.display = 'flex';
+        }
+    }, 1000);
 
-    // Show loading spinner during fetch
-    loadingSpinner.style.display = 'flex';
+    var finishNavigation = function() {
+        if (hasFinished) return;
+        var elapsed = Date.now() - startTime;
+        var remainingMin = Math.max(0, 200 - elapsed);
+
+        setTimeout(function() {
+            if (hasFinished) return;
+            hasFinished = true;
+            clearTimeout(maxTimer);
+            loadingSpinner.style.display = 'none';
+            if (targetContainer) {
+                targetContainer.style.display = 'flex';
+            }
+        }, remainingMin);
+    };
 
     try {
-        // Cache-busting parameter to prevent Electron caching HTML fragment files
-        var response = await fetch(route.url + '?v=' + Date.now());
-        if (!response.ok) throw new Error("Could not fetch page fragment: " + route.url);
-        var html = await response.text();
+        if (!targetContainer) {
+            // Cache-busting parameter to prevent Electron caching HTML fragment files
+            var response = await fetch(route.url + '?v=' + Date.now());
+            if (!response.ok) throw new Error("Could not fetch page fragment: " + route.url);
+            var html = await response.text();
 
-        targetContainer = document.createElement('div');
-        targetContainer.id = routeContainerId;
-        targetContainer.className = 'page-container';
-        targetContainer.style.cssText = 'display: flex; flex-direction: column; flex: 1; height: 100%;';
-        targetContainer.innerHTML = html;
+            targetContainer = document.createElement('div');
+            targetContainer.id = routeContainerId;
+            targetContainer.className = 'page-container';
+            targetContainer.style.cssText = 'display: flex; flex-direction: column; flex: 1; height: 100%;';
+            targetContainer.innerHTML = html;
 
-        loadingSpinner.style.display = 'none';
-        container.appendChild(targetContainer);
+            container.appendChild(targetContainer);
 
-        // Run the specific page controller's lifecycle initialization
-        await route.init();
+            // Run the specific page controller's lifecycle initialization
+            await route.init();
 
-        // Propagate active translations on newly loaded DOM elements
-        if (typeof applyTranslations === 'function') {
-            applyTranslations();
-        }
+            // Propagate active translations on newly loaded DOM elements
+            if (typeof applyTranslations === 'function') {
+                applyTranslations();
+            }
 
-        // Initialize custom selects for elements inside the fragment
-        if (typeof initializeCustomSelects === 'function') {
-            initializeCustomSelects();
+            // Initialize custom selects for elements inside the fragment
+            if (typeof initializeCustomSelects === 'function') {
+                initializeCustomSelects();
+            }
         }
 
         // Update sidebar select state
         updateSidebarActiveState(routeKey);
 
+        // Complete navigation after ensuring min 200ms display time
+        finishNavigation();
+
     } catch (err) {
+        hasFinished = true;
+        clearTimeout(maxTimer);
         loadingSpinner.style.display = 'none';
+
         var errorDiv = document.createElement('div');
         errorDiv.className = 'page-container';
         errorDiv.style.cssText = 'padding: 24px; color: var(--accent-red); text-align: center;';
