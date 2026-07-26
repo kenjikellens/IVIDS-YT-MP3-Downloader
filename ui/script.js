@@ -37,7 +37,7 @@ const routes = {
 
 /**
  * Loads the HTML template fragment dynamically and runs its page initialization.
- * Displays a full-screen grey loader for min 200ms and max 1000ms on every page load.
+ * Displays a grey loader over main-content for min 200ms and max 1000ms with a 100ms fade-out.
  * 
  * @param {string} routeKey - Route destination name ('home' | 'pipeline' | 'ytdl' | 'organiser' | 'settings')
  */
@@ -50,7 +50,7 @@ async function navigateTo(routeKey) {
 
     var startTime = Date.now();
 
-    // Initialize shared loading spinner if not exists
+    // Initialize shared loading spinner inside main-content container if not exists
     var loadingSpinner = document.getElementById('page-loading-spinner');
     if (!loadingSpinner) {
         if (!container.querySelector('.page-container')) {
@@ -63,44 +63,55 @@ async function navigateTo(routeKey) {
             <img src="svg/loader.svg" class="svg-loader" alt="Loading..." />
             <p data-i18n="loading_text">Loading...</p>
         `;
-        document.body.appendChild(loadingSpinner);
+        container.appendChild(loadingSpinner);
     }
 
-    // Hide all existing page containers so only grey loader is visible
+    // Hide all existing page containers so only grey loader is visible inside main-content
     var allPages = container.querySelectorAll('.page-container');
     allPages.forEach(function(page) {
         page.style.display = 'none';
     });
 
-    // Show loading spinner overlay
+    // Make loader visible and reset fade state
+    loadingSpinner.classList.remove('hidden');
     loadingSpinner.style.display = 'flex';
 
     var routeContainerId = 'route-container-' + routeKey;
     var targetContainer = document.getElementById(routeContainerId);
 
-    // Max 1000ms fallback timer to hide spinner if fetch/init stalls
     var hasFinished = false;
+
+    // Helper to smoothly fade out loader over 250ms
+    var hideSpinnerWithFade = function() {
+        if (!loadingSpinner) return;
+        loadingSpinner.classList.add('hidden');
+        setTimeout(function() {
+            loadingSpinner.style.display = 'none';
+        }, 250);
+    };
+
+    // Max 1500ms fallback timer to hide spinner if fetch/init stalls
     var maxTimer = setTimeout(function() {
         if (!hasFinished) {
             hasFinished = true;
-            loadingSpinner.style.display = 'none';
             if (targetContainer) targetContainer.style.display = 'flex';
+            hideSpinnerWithFade();
         }
-    }, 1000);
+    }, 1500);
 
     var finishNavigation = function() {
         if (hasFinished) return;
         var elapsed = Date.now() - startTime;
-        var remainingMin = Math.max(0, 200 - elapsed);
+        var remainingMin = Math.max(0, 500 - elapsed);
 
         setTimeout(function() {
             if (hasFinished) return;
             hasFinished = true;
             clearTimeout(maxTimer);
-            loadingSpinner.style.display = 'none';
             if (targetContainer) {
                 targetContainer.style.display = 'flex';
             }
+            hideSpinnerWithFade();
         }, remainingMin);
     };
 
@@ -142,7 +153,7 @@ async function navigateTo(routeKey) {
     } catch (err) {
         hasFinished = true;
         clearTimeout(maxTimer);
-        loadingSpinner.style.display = 'none';
+        hideSpinnerWithFade();
 
         var errorDiv = document.createElement('div');
         errorDiv.className = 'page-container';

@@ -353,6 +353,7 @@ html, body {
     overflow-x: hidden;
     padding: 16px 20px 16px 12px;
     gap: 16px;
+    position: relative;
 }
 
 /* Page container wrapper supporting transitions and visibility */
@@ -3172,13 +3173,15 @@ input[type="password"]::placeholder {
     text-overflow: ellipsis;
 }
 
-/* Page transition full-screen splash loader overlay with solid grey background */
+/* Page transition loader overlay with solid grey background (sidebar remains visible) */
 .page-loader-overlay {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -3188,6 +3191,13 @@ input[type="password"]::placeholder {
     color: var(--text-muted);
     font-size: 14px;
     font-weight: 500;
-    z-index: 99999;
+    z-index: 100;
+    opacity: 1;
+    transition: opacity 250ms ease;
+}
+
+.page-loader-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
