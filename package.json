@@ -1,0 +1,16 @@
+{
+  "name": "ivids-fetch",
+  "version": "1.0.0",
+  "description": "IVIDS Fetch - YouTube MP3 & Media Playlist Downloader",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:exe": "pyinstaller --noconfirm --onedir --windowed --name \"IVIDS Fetch\" --add-data \"ui;ui\" --add-data \"gemini.py;.\" --add-data \"gemini2.py;.\" --add-data \"gemini3.py;.\" --add-data \"shazam.py;.\" StartUp.py"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}
